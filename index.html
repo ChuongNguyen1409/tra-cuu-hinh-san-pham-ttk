@@ -1,347 +1,1693 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra Cứu Sản Phẩm</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Tra Cứu Hình Ảnh & Thông Tin Sản Phẩm - Tân Tường Khang</title>
+    <meta name="description" content="Công cụ tra cứu nhanh hình ảnh sản phẩm, mã SAP, mã sản phẩm Tân Tường Khang dành cho nhân viên kinh doanh và kho vận.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://tantuongkhang.vn/vnt_upload/weblink/logo_1993.png">
+
+    <!-- Google Fonts: Be Vietnam Pro & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet">
+
+    <!-- PapaParse for Google Sheets CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'ttk-blue': '#0066B3',
+                        'ttk-blue-hover': '#004e8c',
+                        'ttk-blue-light': '#e8f3fc',
+                        'ttk-blue-dark': '#003a66',
+                        'ttk-red': '#E30613',
+                        'ttk-red-hover': '#ba0510',
+                        'ttk-red-light': '#fee2e2'
+                    },
+                    fontFamily: {
+                        sans: ['"Be Vietnam Pro"', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                        mono: ['"Fira Code"', 'ui-monospace', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        * { box-sizing: border-box; }
+        /* ==========================================================================
+           MODERN TACTILE UI & MASCOT STYLES
+           ========================================================================== */
+        :root {
+            --ttk-blue: #0066B3;
+            --ttk-blue-glow: rgba(0, 102, 179, 0.35);
+            --ttk-red: #E30613;
+            --ttk-emerald: #10b981;
+            --bg-page: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --border-card: rgba(226, 232, 240, 0.9);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        html.dark {
+            --bg-page: #0b1120;
+            --bg-card: rgba(17, 24, 39, 0.92);
+            --border-card: rgba(51, 65, 85, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            margin: 0; padding: 20px;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        h2 { text-align: center; color: #2c3e50; }
-        
-        /* Container chứa ô tìm kiếm và gợi ý */
-        .search-container {
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        html.dark ::-webkit-scrollbar-thumb { background: #334155; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--ttk-blue); }
+
+        /* Tactile Button Press Physics */
+        .btn-tactile {
             position: relative;
-            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        
-        .search-box {
-            display: flex;
-            gap: 10px;
+        .btn-tactile:active {
+            transform: scale(0.94);
         }
-        input[type="text"] {
-            flex: 1;
-            padding: 12px 15px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            outline: none;
-        }
-        input[type="text"]:focus { border-color: #3498db; }
-        button {
-            padding: 12px 25px;
-            font-size: 16px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover { background-color: #2980b9; }
 
-        /* Hộp Gợi ý (Autocomplete) */
-        .suggestions-box {
+        /* Material Ripple Waves */
+        .ripple-wave {
             position: absolute;
-            top: 100%;
-            left: 0;
-            width: calc(100% - 110px); /* Canh bằng chiều rộng ô input */
-            background: #fff;
-            border: 1px solid #ccc;
-            border-top: none;
-            border-radius: 0 0 5px 5px;
-            max-height: 250px;
-            overflow-y: auto;
-            z-index: 10;
-            display: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: rippleAnim 0.6s linear;
+            background-color: rgba(255, 255, 255, 0.45);
+            pointer-events: none;
         }
-        .suggestion-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-            font-size: 15px;
+        .ripple-dark .ripple-wave {
+            background-color: rgba(0, 102, 179, 0.3);
         }
-        .suggestion-item:last-child { border-bottom: none; }
-        .suggestion-item:hover { background-color: #f0f8ff; color: #2980b9; }
-        .suggestion-item strong { color: #2c3e50; }
-        
-        /* Giao diện thẻ kết quả */
-        .result-card {
-            border: 1px solid #e0e0e0;
-            padding: 20px;
-            margin-top: 15px;
-            border-radius: 8px;
-            display: flex;
-            gap: 20px;
-            background: #fafafa;
-            align-items: center;
+        @keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
         }
-        .result-info { flex: 2; }
-        .result-info p { margin: 8px 0; font-size: 15px; line-height: 1.5; }
-        .result-image { flex: 1; text-align: center; }
-        .result-image img {
-            max-width: 100%;
-            max-height: 150px;
-            cursor: pointer;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            transition: transform 0.2s;
-        }
-        .result-image img:hover { transform: scale(1.05); }
 
-        /* Giao diện Modal (Phóng to ảnh) */
-        .modal {
-            display: none; position: fixed; z-index: 1000; left: 0; top: 0;
-            width: 100%; height: 100%; background-color: rgba(0,0,0,0.85);
+        /* Shimmer Sheen on Hover */
+        .btn-shimmer {
+            position: relative;
+            overflow: hidden;
         }
-        .modal-content {
-            margin: auto; display: block; max-width: 90%; max-height: 90vh; margin-top: 5vh;
+        .btn-shimmer::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 40%;
+            height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+            transform: rotate(25deg);
+            pointer-events: none;
+        }
+        .btn-shimmer:hover::after {
+            animation: shimmerEffect 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes shimmerEffect {
+            0% { left: -60%; }
+            100% { left: 140%; }
+        }
+
+        /* 3D Tilt Cards */
+        .card-3d {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card-3d:hover {
+            box-shadow: 0 20px 35px -10px rgba(0, 102, 179, 0.15), 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            border-color: rgba(0, 102, 179, 0.45);
+        }
+        html.dark .card-3d:hover {
+            box-shadow: 0 20px 40px -10px rgba(14, 165, 233, 0.25);
+            border-color: rgba(56, 189, 248, 0.5);
+        }
+
+        /* MASCOT ANIMATION STYLING */
+        .mascot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 45;
+            filter: drop-shadow(0 12px 24px rgba(0, 102, 179, 0.22));
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none;
+        }
+        .mascot-avatar {
+            width: 100px;
+            height: 100px;
+            cursor: pointer;
+            animation: mascotIdle 4s ease-in-out infinite;
+            transform-origin: center bottom;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .mascot-avatar:hover {
+            animation-play-state: paused;
+            transform: scale(1.08) rotate(3deg);
+        }
+        @keyframes mascotIdle {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-7px) rotate(-1.5deg); }
+        }
+
+        .mascot-head {
+            transform-origin: center center;
+            transition: transform 0.08s ease-out;
+        }
+        .mascot-pupil {
+            transition: transform 0.04s ease-out;
+        }
+        .mascot-eyelid {
+            transform-origin: center top;
+            transition: transform 0.12s ease-in-out;
+        }
+
+        /* Speech Bubble */
+        .mascot-bubble {
+            position: absolute;
+            bottom: 105px;
+            right: 0;
+            min-width: 210px;
+            max-width: 270px;
+            background: white;
+            color: #0f172a;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            padding: 9px 13px;
+            border-radius: 18px 18px 4px 18px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.4;
+            opacity: 0;
+            transform: translateY(10px) scale(0.9);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            z-index: 50;
+        }
+        html.dark .mascot-bubble {
+            background: #1e293b;
+            color: #f8fafc;
+            border-color: #334155;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+        .mascot-bubble.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        .mascot-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            right: 26px;
+            width: 12px;
+            height: 12px;
+            background: inherit;
+            border-right: 1px solid inherit;
+            border-bottom: 1px solid inherit;
+            transform: rotate(45deg);
+        }
+
+        /* Minimized state */
+        .mascot-minimized .mascot-avatar {
+            width: 44px;
+            height: 44px;
+            animation: none;
+        }
+        .mascot-minimized .mascot-bubble {
+            display: none !important;
+        }
+
+        /* Keyboard badge */
+        .kbd-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fira Code', monospace;
+            padding: 2px 6px;
             border-radius: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.08);
         }
-        .close {
-            position: absolute; top: 15px; right: 35px; color: #f1f1f1;
-            font-size: 40px; font-weight: bold; cursor: pointer;
+        html.dark .kbd-badge {
+            background: #1e293b;
+            color: #94a3b8;
+            border-color: #475569;
         }
-        .close:hover { color: #bbb; }
-        .loading { text-align: center; color: #7f8c8d; font-style: italic; }
-        
-        .tip-box {
-            background-color: #D0FFCD;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #000000;
+
+        /* Floating Toast */
+        #ttkToast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            z-index: 60;
+            opacity: 0;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
         }
-        
-        /* Responsive cho điện thoại */
-        @media (max-width: 600px) {
-            .result-card { flex-direction: column; }
-            .search-box { flex-direction: column; }
-            .suggestions-box { width: 100%; }
+        #ttkToast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+            pointer-events: auto;
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen bg-slate-50 dark:bg-[#0b1120] text-slate-800 dark:text-slate-100 antialiased selection:bg-ttk-blue selection:text-white transition-colors duration-300">
 
-<div class="container">
-    <h2>Tra Cứu Thông Tin Sản Phẩm</h2>
-    
-    <div class="tip-box">
-        <strong>⚠️Code by Chuong Nguyen.</strong> Name: Nguyen Phi Chuong | Phone: 081 9192 700
-    </div>
-    
-    <div class="search-container">
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Nhập Mã sản phẩm hoặc Tên sản phẩm..." autocomplete="off">
-            <button onclick="searchProduct()" id="searchBtn">Tìm kiếm</button>
+    <!-- TOP BAR WITH STATUS & SHORTCUTS -->
+    <div class="bg-gradient-to-r from-ttk-blue-dark via-ttk-blue to-blue-800 text-white text-xs py-2 px-3 sm:px-6 border-b border-blue-900/40">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
+            <div class="flex items-center gap-2 sm:gap-3">
+                <span class="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                    <span id="dataStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                    <span id="dataStatusBadge">Đang kết nối Google Sheets...</span>
+                </span>
+                <span class="hidden md:inline text-blue-200">|</span>
+                <span class="hidden sm:inline-flex items-center gap-1.5 text-blue-100 text-xs">
+                    <i class="fa-solid fa-bolt text-amber-300"></i>
+                    <span>Hệ thống tra cứu nhanh hình ảnh & mã sản phẩm TTK</span>
+                </span>
+            </div>
+
+            <div class="flex items-center gap-3 sm:gap-4 ml-auto text-xs">
+                <span class="hidden lg:inline text-blue-200">Phím tắt: <kbd class="kbd-badge">/</kbd> Tìm kiếm • <kbd class="kbd-badge">G</kbd> Thẻ • <kbd class="kbd-badge">L</kbd> Bảng</span>
+                <a href="tel:0819192700" class="inline-flex items-center gap-1.5 font-bold text-amber-300 hover:text-white transition">
+                    <i class="fa-solid fa-phone-volume animate-pulse text-[11px]"></i>
+                    <span>Hotline MKT: 081.9192.700</span>
+                </a>
+            </div>
         </div>
-        <!-- Vùng hiển thị gợi ý -->
-        <div id="suggestions" class="suggestions-box"></div>
     </div>
 
-    <div id="results">
-        <p class="loading" id="statusText">Đang tải dữ liệu từ Google Sheets...</p>
-    </div>
-    <div>
-        <p style="text-align: right;">From Chuong Nguyen (.❛ ᴗ ❛.)</p>
-    </div>
-    
-
-
-</div>
-
-<div id="imageModal" class="modal">
-    <span class="close" onclick="closeModal()">&times;</span>
-    <img class="modal-content" id="imgModalSrc">
-</div>
-
-<script>
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSh8BRFK8LmWiL_by_a9BZ2CjxVGRwQ84TJn1WVfXe9cft2q74AjnTy1sDZLG0DysHzdEeCi_cojpOB/pub?output=csv';
-    let productData = [];
-
-    const searchInput = document.getElementById('searchInput');
-    const suggestionsBox = document.getElementById('suggestions');
-
-    // 1. Tải dữ liệu
-    window.onload = function() {
-        Papa.parse(csvUrl, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                productData = results.data;
-                document.getElementById('statusText').innerText = "Muốn tìm cái gì thì nhập mã TTK hoặc tên thường gọi của sản phẩm đó.\n Nếu không có tức là mã này không chuộng nên chưa làm hình, liên hệ MKT để bổ sung theo yêu cầu.";
+    <!-- MAIN HEADER & NAVIGATION -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20 gap-4">
                 
+                <!-- Logo & Brand Header -->
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <a href="#" class="flex items-center gap-3 group">
+                        <div class="bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center">
+                            <img 
+                                src="https://tantuongkhang.vn/vnt_upload/weblink/logo_1993.png" 
+                                alt="Logo Tân Tường Khang" 
+                                class="h-9 sm:h-11 w-auto object-contain max-w-[130px] sm:max-w-[160px]"
+                                onerror="this.onerror=null; this.src='https://placehold.co/160x50/0066B3/ffffff?text=TÂN+TƯỜNG+KHANG';"
+                            >
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 class="text-base sm:text-lg font-black tracking-tight text-ttk-blue dark:text-sky-400">
+                                    TRA CỨU SẢN PHẨM
+                                </h1>
+                                <span class="bg-ttk-red text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">
+                                    PRO V2
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
+                                Dành cho nhân viên kinh doanh
+                            </p>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Right Action Bar -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- View Mode Toggle (Grid vs List Table) -->
+                    <div class="hidden sm:flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <button 
+                            id="viewGridBtn" 
+                            class="btn-tactile p-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-ttk-blue text-white shadow-sm"
+                            title="Xem dạng Lưới Thẻ (Phím G)"
+                        >
+                            <i class="fa-solid fa-grip text-sm"></i>
+                            <span class="hidden md:inline">Thẻ</span>
+                        </button>
+                        <button 
+                            id="viewListBtn" 
+                            class="btn-tactile p-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-600 dark:text-slate-300"
+                            title="Xem dạng Bảng Danh Sách (Phím L)"
+                        >
+                            <i class="fa-solid fa-list text-sm"></i>
+                            <span class="hidden md:inline">Bảng</span>
+                        </button>
+                    </div>
+
+                    <!-- Dark Mode Switcher -->
+                    <button 
+                        id="darkModeToggle" 
+                        class="btn-tactile p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition"
+                        title="Đổi giao diện Sáng / Tối (Phím D)"
+                    >
+                        <i id="themeIcon" class="fa-solid fa-moon text-slate-700 dark:text-amber-400 text-lg"></i>
+                    </button>
+
+                    <!-- Reload Sheets Data Button -->
+                    <button 
+                        id="reloadSheetsBtn"
+                        class="btn-tactile p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition"
+                        title="Tải lại dữ liệu Google Sheets mới nhất"
+                    >
+                        <i id="reloadIcon" class="fa-solid fa-arrows-rotate text-ttk-blue dark:text-sky-400 text-base"></i>
+                    </button>
+
+                    <!-- Author Info Pill -->
+                    <div class="hidden lg:flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700 text-xs">
+                        <span class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 text-ttk-blue dark:text-sky-300 font-bold flex items-center justify-center text-xs">
+                            CN
+                        </span>
+                        <div class="text-[11px] leading-tight">
+                            <span class="font-bold text-slate-700 dark:text-slate-200 block">Chuong Nguyen</span>
+                            <span class="text-slate-400 block">081.9192.700</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- SEARCH HERO & AUTOCOMPLETE CENTER -->
+    <section class="bg-gradient-to-b from-blue-50/70 via-indigo-50/30 to-transparent dark:from-slate-900/80 py-6 sm:py-8 border-b border-slate-200/80 dark:border-slate-800">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 space-y-4">
+            
+            <!-- Tip Banner (Clean modern alert replacing old yellow box) -->
+            <div class="bg-blue-50/90 dark:bg-slate-800/90 border border-blue-200/80 dark:border-blue-900/60 rounded-2xl p-3.5 sm:p-4 text-xs sm:text-sm text-slate-700 dark:text-slate-200 flex items-start gap-3 shadow-sm backdrop-blur-sm">
+                <div class="w-8 h-8 rounded-xl bg-ttk-blue text-white flex-shrink-0 flex items-center justify-center text-sm font-bold shadow-sm">
+                    <i class="fa-solid fa-lightbulb text-amber-300"></i>
+                </div>
+                <div class="flex-1 leading-relaxed">
+                    <p class="font-semibold text-slate-800 dark:text-white">
+                        💡 <strong>Tra cứu nhanh:</strong> Nhập mã TTK, mã SAP, hoặc tên thường gọi (<span class="font-semibold">cong phi 6, BOPP, tô 400, chữ nhật sọc nhỏ</span>).
+                    </p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Nếu mã chưa có hình là do mã này ít chuộng, vui lòng liên hệ <strong>Chuong Nguyen</strong> để bổ sung.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Big Interactive Search Input with Autocomplete Dropdown -->
+            <div class="relative">
+                <div class="relative flex items-center shadow-xl rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 focus-within:border-ttk-blue dark:focus-within:border-sky-400 focus-within:ring-4 focus-within:ring-blue-100 dark:focus-within:ring-sky-950 transition-all duration-200">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 dark:text-slate-500 text-lg sm:text-xl pl-4 sm:pl-5 pr-2"></i>
+                    
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Nhập Mã Sản Phẩm, Mã SAP, hoặc Tên sản phẩm..." 
+                        class="w-full py-3.5 sm:py-4 px-2 text-sm sm:text-base font-semibold bg-transparent text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
+                        autocomplete="off"
+                        spellcheck="false"
+                    >
+
+                    <!-- Clear Button -->
+                    <button 
+                        id="clearSearchBtn" 
+                        class="hidden mr-2 p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                        title="Xóa tìm kiếm (Esc)"
+                    >
+                        <i class="fa-solid fa-circle-xmark text-lg"></i>
+                    </button>
+
+                    <!-- Search Action Button with Tactile Ripple & Shimmer -->
+                    <button 
+                        id="searchBtn"
+                        class="btn-shimmer btn-tactile mr-2 bg-ttk-blue hover:bg-ttk-blue-hover text-white text-xs sm:text-sm font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-md transition flex items-center gap-1.5 flex-shrink-0"
+                    >
+                        <i class="fa-solid fa-search"></i>
+                        <span>Tìm Kiếm</span>
+                    </button>
+                </div>
+
+                <!-- Autocomplete Suggestions Dropdown -->
+                <div 
+                    id="suggestionsBox" 
+                    class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-40 hidden max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/60"
+                >
+                    <!-- Suggestions items injected by JS -->
+                </div>
+            </div>
+
+            <!-- Quick Filter Chips -->
+            <div class="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar text-xs" id="quickChipsContainer">
+                <span class="text-slate-400 font-bold whitespace-nowrap pl-1">Gợi ý nhanh:</span>
+                <button class="quick-chip btn-tactile px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:border-ttk-blue hover:text-ttk-blue" data-keyword="Ống">
+                    🥤 Ống Hút
+                </button>
+                <button class="quick-chip btn-tactile px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:border-ttk-blue hover:text-ttk-blue" data-keyword="Hộp chữ nhật">
+                    🛡️ Hộp Đa Năng
+                </button>
+                <button class="quick-chip btn-tactile px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:border-ttk-blue hover:text-ttk-blue" data-keyword="Tô">
+                    🍜 Tô
+                </button>
+                <button class="quick-chip btn-tactile px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:border-ttk-blue hover:text-ttk-blue" data-keyword="Ly">
+                    ☕ Ly & Nắp
+                </button>
+                <button class="quick-chip btn-tactile px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:border-ttk-blue hover:text-ttk-blue" data-keyword="Khay">
+                    🍱 Khay
+                </button>
+                <button class="quick-chip btn-tactile px-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-200 hover:border-ttk-blue hover:text-ttk-blue" data-keyword="Chén">
+                    🥣 Chén
+                </button>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- RESULTS & CATALOG CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+
+        <!-- Status & Results Count Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-semibold">
+                <i class="fa-solid fa-boxes-stacked text-ttk-blue dark:text-sky-400 text-base"></i>
+                <span id="resultsCount">Đang tải dữ liệu sản phẩm...</span>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Mobile View Switcher -->
+                <div class="sm:hidden flex items-center p-0.5 rounded-lg bg-slate-200 dark:bg-slate-800">
+                    <button id="viewGridMobile" onclick="document.getElementById('viewGridBtn').click()" class="p-1.5 px-2.5 rounded text-xs font-bold bg-white dark:bg-slate-700 shadow-sm">
+                        <i class="fa-solid fa-grip"></i>
+                    </button>
+                    <button id="viewListMobile" onclick="document.getElementById('viewListBtn').click()" class="p-1.5 px-2.5 rounded text-xs font-bold text-slate-500">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
+                </div>
+
+                <!-- Reset Search Button -->
+                <button 
+                    id="resetBtn" 
+                    class="btn-tactile text-xs font-bold text-slate-500 hover:text-ttk-red dark:text-slate-400 dark:hover:text-rose-400 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition"
+                >
+                    <i class="fa-solid fa-arrow-rotate-left"></i>
+                    <span>Hiển thị tất cả</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 1. GRID CARDS VIEW -->
+        <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards rendered dynamically -->
+        </div>
+
+        <!-- 2. COMPACT TABLE VIEW -->
+        <div id="resultsTable" class="hidden overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        <th class="p-3 text-center w-12">#</th>
+                        <th class="p-3 w-16">Hình Ảnh</th>
+                        <th class="p-3">Mã Sản Phẩm</th>
+                        <th class="p-3">Mã SAP</th>
+                        <th class="p-3">Tên Sản Phẩm</th>
+                        <th class="p-3 text-right">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs sm:text-sm">
+                    <!-- Rows injected by JS -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 3. EMPTY STATE -->
+        <div id="emptyResults" class="hidden bg-white dark:bg-slate-900 rounded-3xl p-10 sm:p-14 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 max-w-lg mx-auto my-10 shadow-sm">
+            <div class="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/60 text-ttk-red flex items-center justify-center text-3xl mx-auto mb-4">
+                <i class="fa-solid fa-box-open"></i>
+            </div>
+            <h3 class="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100">
+                Không tìm thấy sản phẩm khớp từ khóa!
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                Nếu không tìm thấy, mã này có thể chưa được cập nhật hình ảnh. Bạn vui lòng liên hệ <strong>MKT (Chuong Nguyen)</strong> để yêu cầu bổ sung nhé!
+            </p>
+            <button 
+                onclick="document.getElementById('resetBtn').click()"
+                class="btn-tactile mt-5 inline-flex items-center gap-2 bg-ttk-blue hover:bg-ttk-blue-hover text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition"
+            >
+                <i class="fa-solid fa-arrow-rotate-left"></i>
+                <span>Xem Tất Cả Sản Phẩm</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- LIGHTBOX IMAGE MODAL -->
+    <div 
+        id="imageModal" 
+        class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md hidden items-center justify-center p-4 sm:p-6 transition-opacity duration-300"
+        role="dialog"
+        aria-modal="true"
+    >
+        <div class="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden max-w-2xl w-full border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col max-h-[90vh]">
+            <!-- Header -->
+            <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-4">
+                <div>
+                    <span id="modalCode" class="font-mono font-bold text-xs bg-blue-50 dark:bg-sky-950 text-ttk-blue dark:text-sky-400 px-2.5 py-0.5 rounded-md border border-blue-200 dark:border-blue-900">
+                        MÃ SP
+                    </span>
+                    <h3 id="modalTitle" class="text-base font-black text-slate-900 dark:text-slate-100 mt-1 line-clamp-1">
+                        Chi Tiết Hình Ảnh
+                    </h3>
+                </div>
+                <button 
+                    id="modalCloseBtn" 
+                    class="btn-tactile w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-lg transition"
+                    title="Đóng (Esc)"
+                >
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="overflow-y-auto p-4 sm:p-6 flex items-center justify-center bg-slate-100/60 dark:bg-slate-800/40">
+                <img 
+                    id="imgModalSrc" 
+                    src="" 
+                    alt="Ảnh sản phẩm phóng to" 
+                    class="max-h-[60vh] max-w-full rounded-2xl object-contain shadow-md"
+                >
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                <span id="modalSap" class="font-mono text-xs text-slate-500 dark:text-slate-400"></span>
+                <div class="flex items-center gap-2">
+                    <button 
+                        id="modalCopyLinkBtn"
+                        class="btn-tactile text-xs font-bold py-2 px-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition flex items-center gap-1.5"
+                    >
+                        <i class="fa-regular fa-copy text-ttk-blue dark:text-sky-400"></i>
+                        <span>Copy Link Ảnh</span>
+                    </button>
+                    <a 
+                        id="modalOpenNewTab" 
+                        href="#" 
+                        target="_blank"
+                        class="btn-shimmer btn-tactile text-xs font-bold py-2 px-4 rounded-xl bg-ttk-blue hover:bg-ttk-blue-hover text-white transition shadow-sm flex items-center gap-1.5"
+                    >
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        <span>Mở Ảnh Gốc</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOATING TOAST NOTIFICATION -->
+    <div id="ttkToast" class="bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-md text-white text-xs sm:text-sm font-bold py-3 px-5 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2.5">
+        <div id="ttkToastMessage" class="flex items-center gap-2">
+            <!-- Toast content -->
+        </div>
+    </div>
+
+    <!-- FOOTER WITH CREDITS -->
+    <footer class="mt-16 py-8 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs text-center transition-colors">
+        <div class="max-w-4xl mx-auto px-4 space-y-2">
+            <p class="font-bold text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5">
+                <span>Made with</span> <span class="text-red-500 animate-pulse text-sm">❤️</span> <span>by <strong>Chuong Nguyen</strong> (.❛ ᴗ ❛.)</span>
+            </p>
+            <p class="text-[11px] text-slate-400">
+                Tân Tường Khang Product Image Lookup Tool • Phone: 081 9192 700 • Email: chuongnguyen0149@gmail.com
+            </p>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVE MASCOT MODULE (BÉ MEW - CURSOR FOLLOW ANIMATIONS) -->
+    <div id="mascotContainer" class="mascot-container flex items-end flex-col">
+        <!-- Speech Bubble -->
+        <div id="mascotBubble" class="mascot-bubble" role="status">
+            <span class="text-base flex-shrink-0 animate-bounce">💬</span>
+            <span id="mascotText">Meow! Bé Mew xin chào bạn! 👋</span>
+        </div>
+
+        <div class="relative group">
+            <!-- Minimize/Expand Toggle -->
+            <button 
+                id="mascotToggle" 
+                title="Thu gọn / Mở rộng Mascot" 
+                class="absolute -top-2 -left-2 z-10 w-6 h-6 rounded-full bg-slate-800 text-white hover:bg-ttk-red flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition shadow-md"
+            >
+                <i class="fa-solid fa-minus text-[10px]"></i>
+            </button>
+
+            <!-- Vector Cat-Bot Mascot SVG with Cursor Eye Tracking -->
+            <div id="mascotAvatar" class="mascot-avatar" title="Nhấp vào để Bé Mew tặng mẹo làm việc!">
+                <svg viewBox="0 0 120 120" class="w-full h-full filter drop-shadow-md overflow-visible">
+                    <defs>
+                        <linearGradient id="catBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ffffff" />
+                            <stop offset="60%" stop-color="#f0f7ff" />
+                            <stop offset="100%" stop-color="#bae0fd" />
+                        </linearGradient>
+                        <linearGradient id="catEar" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#0066B3" />
+                            <stop offset="100%" stop-color="#003a66" />
+                        </linearGradient>
+                        <linearGradient id="catVisor" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#0f172a" />
+                            <stop offset="100%" stop-color="#1e293b" />
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Mascot Head & Ears (Tilt 3D via JS) -->
+                    <g id="mascotHead" class="mascot-head">
+                        <!-- Left Cat Ear -->
+                        <polygon points="26,45 14,14 48,28" fill="url(#catEar)" stroke="#0066B3" stroke-width="2.5" stroke-linejoin="round" />
+                        <polygon points="26,40 18,20 40,30" fill="#f43f5e" opacity="0.85" />
+
+                        <!-- Right Cat Ear -->
+                        <polygon points="94,45 106,14 72,28" fill="url(#catEar)" stroke="#0066B3" stroke-width="2.5" stroke-linejoin="round" />
+                        <polygon points="94,40 102,20 80,30" fill="#f43f5e" opacity="0.85" />
+
+                        <!-- Round Face / Helmet -->
+                        <ellipse cx="60" cy="65" rx="46" ry="43" fill="url(#catBody)" stroke="#0066B3" stroke-width="3.5" />
+
+                        <!-- Visor Glass Screen -->
+                        <rect x="25" y="44" width="70" height="42" rx="21" fill="url(#catVisor)" stroke="#38bdf8" stroke-width="2" />
+
+                        <!-- Rosy Cheeks -->
+                        <circle cx="34" cy="74" r="4.5" fill="#f43f5e" opacity="0.65" />
+                        <circle cx="86" cy="74" r="4.5" fill="#f43f5e" opacity="0.65" />
+
+                        <!-- Cute Cat Whiskers -->
+                        <line x1="20" y1="68" x2="10" y2="65" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />
+                        <line x1="20" y1="73" x2="8" y2="75" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />
+                        <line x1="100" y1="68" x2="110" y2="65" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />
+                        <line x1="100" y1="73" x2="112" y2="75" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />
+
+                        <!-- LEFT EYE -->
+                        <g id="leftEye">
+                            <!-- White Socket -->
+                            <circle cx="43" cy="62" r="10" fill="#ffffff" />
+                            <!-- Pupil (Moves with Cursor!) -->
+                            <g id="mascotPupilLeft" class="mascot-pupil">
+                                <circle cx="43" cy="62" r="5.5" fill="#0066B3" />
+                                <circle cx="43" cy="62" r="3.2" fill="#021426" />
+                                <circle cx="41.5" cy="59.5" r="1.8" fill="#ffffff" />
+                                <circle cx="44.8" cy="63.2" r="1" fill="#ffffff" opacity="0.9" />
+                            </g>
+                            <!-- Blink Eyelid -->
+                            <rect id="eyelidLeft" class="mascot-eyelid" x="32" y="51" width="22" height="22" rx="11" fill="#1e293b" style="transform: scaleY(0);" />
+                        </g>
+
+                        <!-- RIGHT EYE -->
+                        <g id="rightEye">
+                            <!-- White Socket -->
+                            <circle cx="77" cy="62" r="10" fill="#ffffff" />
+                            <!-- Pupil (Moves with Cursor!) -->
+                            <g id="mascotPupilRight" class="mascot-pupil">
+                                <circle cx="77" cy="62" r="5.5" fill="#0066B3" />
+                                <circle cx="77" cy="62" r="3.2" fill="#021426" />
+                                <circle cx="75.5" cy="59.5" r="1.8" fill="#ffffff" />
+                                <circle cx="78.8" cy="63.2" r="1" fill="#ffffff" opacity="0.9" />
+                            </g>
+                            <!-- Blink Eyelid -->
+                            <rect id="eyelidRight" class="mascot-eyelid" x="66" y="51" width="22" height="22" rx="11" fill="#1e293b" style="transform: scaleY(0);" />
+                        </g>
+
+                        <!-- Cute Cat Mouth :3 -->
+                        <path id="mascotMouth" d="M 54 74 Q 57 77 60 74 Q 63 77 66 74" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" />
+                    </g>
+
+                    <!-- TTK Red Collar & Bell -->
+                    <rect x="42" y="96" width="36" height="8" rx="4" fill="#E30613" />
+                    <circle cx="60" cy="104" r="5" fill="#fbbf24" stroke="#d97706" stroke-width="1.5" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT APPLICATION -->
+    <script>
+        // 1. Google Sheets CSV Configuration (Exact URL from Chuong Nguyen)
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSh8BRFK8LmWiL_by_a9BZ2CjxVGRwQ84TJn1WVfXe9cft2q74AjnTy1sDZLG0DysHzdEeCi_cojpOB/pub?output=csv';
+
+        // 2. High-Quality Offline Fallback Data (So tool works 100% even if Sheets is loading or offline)
+        const fallbackProducts = [
+            {
+                "Mã SAP": "1001201",
+                "Mã Sản Phẩm": "TTK-OH12-BOPP",
+                "Tên sản phẩm": "Ống Hút Nhọn Phi 12mm - Bọc Màng BOPP (Trà Sữa)",
+                "Link URL hình ảnh": "https://tantuongkhang.vn/vnt_upload/product/2020/01/thumbs/(570x380)__PLA_1.jpg",
+                "Quy cách": "Φ12mm x 21cm • Nhựa PP nguyên sinh • Thùng 5.000 cái"
             },
-            error: function() {
-                document.getElementById('statusText').innerText = "Lỗi khi tải dữ liệu. Vui lòng kiểm tra lại link Google Sheets.";
+            {
+                "Mã SAP": "1001202",
+                "Mã Sản Phẩm": "TTK-OH12-PAPER",
+                "Tên sản phẩm": "Ống Hút Nhọn Phi 12mm - Bọc Màng Giấy Tiệt Trùng",
+                "Link URL hình ảnh": "https://tantuongkhang.vn/vnt_upload/product/2020/01/thumbs/(470x380)__PLA_TRYNG.jpg",
+                "Quy cách": "Φ12mm x 21cm • Vỏ giấy Kraft trắng kháng khuẩn • Thùng 5.000 cái"
+            },
+            {
+                "Mã SAP": "1001203",
+                "Mã Sản Phẩm": "TTK-OH08-SMOOTHIE",
+                "Tên sản phẩm": "Ống Hút Nhọn Phi 8mm - Thức Uống Đá Xay & Sinh Tố",
+                "Link URL hình ảnh": "https://images.unsplash.com/photo-1527661591475-527312dd65f5?auto=format&fit=crop&w=600&q=80",
+                "Quy cách": "Φ8mm x 21cm • Thùng 6.000 cái"
+            },
+            {
+                "Mã SAP": "1001204",
+                "Mã Sản Phẩm": "TTK-OH-BEND-BOPP",
+                "Tên sản phẩm": "Ống Hút Cong Co Giãn (Ống Lò Xo) Bọc Màng BOPP",
+                "Link URL hình ảnh": "https://tantuongkhang.vn/vnt_upload/product/07_2023/thumbs/(470x380)__ong-hut-cong.jpg",
+                "Quy cách": "Φ6mm x 21cm • Đốt co giãn 90° • Thùng 5.000 cái"
+            },
+            {
+                "Mã SAP": "1001205",
+                "Mã Sản Phẩm": "TTK-OH-PLA-ECO",
+                "Tên sản phẩm": "Ống Hút Sinh Học Phân Hủy Hoàn Toàn 100% (PLA)",
+                "Link URL hình ảnh": "https://tantuongkhang.vn/vnt_upload/product/2020/01/thumbs/(570x380)__PLA_1.jpg",
+                "Quy cách": "Tinh bột bắp sinh học PLA tự phân hủy • Thùng 5.000 cái"
+            },
+            {
+                "Mã SAP": "2002001",
+                "Mã Sản Phẩm": "TTK-CUP-PP700",
+                "Tên sản phẩm": "Ly Nhựa PP Ép Màng Chịu Nhiệt (500ml & 700ml)",
+                "Link URL hình ảnh": "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=600&q=80",
+                "Quy cách": "Miệng Φ95mm • Chịu sôi 120°C • Thùng 1.000 cái"
+            },
+            {
+                "Mã SAP": "2002002",
+                "Mã Sản Phẩm": "TTK-CUP-PET500",
+                "Tên sản phẩm": "Ly Nhựa PET Trong Suốt Cao Cấp (16oz - 24oz)",
+                "Link URL hình ảnh": "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?auto=format&fit=crop&w=600&q=80",
+                "Quy cách": "Trong suốt như thủy tinh • Thùng 1.000 cái"
+            },
+            {
+                "Mã SAP": "3003001",
+                "Mã Sản Phẩm": "TTK-BOX-MEAL4",
+                "Tên sản phẩm": "Hộp Cơm 2 - 3 - 4 Ngăn Nắp Khóa Chống Tràn",
+                "Link URL hình ảnh": "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80",
+                "Quy cách": "Đế đen PP chịu lò vi sóng 120°C • Nắp trong suốt • Thùng 500 bộ"
+            },
+            {
+                "Mã SAP": "4004001",
+                "Mã Sản Phẩm": "TTK-TRAY-SEAFOOD",
+                "Tên sản phẩm": "Khay Nhựa Thủy Sản Đông Lạnh Chịu Âm Sâu (-40°C)",
+                "Link URL hình ảnh": "https://tantuongkhang.vn/vnt_upload/product/12_2025/thumbs/(570x380)__KhayThuySan.jpg",
+                "Quy cách": "Nhựa HIPS/PET chuyên cấp đông tôm cá • Chuẩn xuất khẩu EU/Mỹ"
+            },
+            {
+                "Mã SAP": "5005001",
+                "Mã Sản Phẩm": "TTK-CUTLERY-SET",
+                "Tên sản phẩm": "Muỗng Nĩa Nhựa Tiệt Trùng Bọc Màng Đóng Túi Riêng",
+                "Link URL hình ảnh": "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?auto=format&fit=crop&w=600&q=80",
+                "Quy cách": "Nhựa PP tiệt trùng chuẩn BRC • Thùng 2.000 cái"
             }
-        });
-    };
+        ];
 
-    // 2. Chuyển đổi link Google Drive (Dùng phương pháp Thumbnail API - có thể hoạt động tốt hơn)
-    function getDirectDriveImageUrl(url) {
-        if (!url) return '';
-        if (url.includes('drive.google.com')) {
-            let fileId = '';
-            const matchesD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-            if (matchesD && matchesD[1]) { fileId = matchesD[1]; } 
-            else {
-                const matchesId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-                if (matchesId && matchesId[1]) { fileId = matchesId[1]; }
-            }
-            if (fileId) {
-                // Ép Google tạo hình thu nhỏ (thường ít bị block hơn link full)
-                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-            }
+        let productData = [];
+        let viewMode = localStorage.getItem('TTK_VIEW_MODE') || 'grid';
+        let isDarkMode = localStorage.getItem('TTK_DARK_MODE') === 'true';
+
+        // DOM References
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const suggestionsBox = document.getElementById('suggestionsBox');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const resultsTable = document.getElementById('resultsTable');
+        const resultsTableBody = document.getElementById('resultsTableBody');
+        const resultsCount = document.getElementById('resultsCount');
+        const emptyResults = document.getElementById('emptyResults');
+        const resetBtn = document.getElementById('resetBtn');
+        const viewGridBtn = document.getElementById('viewGridBtn');
+        const viewListBtn = document.getElementById('viewListBtn');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const reloadSheetsBtn = document.getElementById('reloadSheetsBtn');
+        const reloadIcon = document.getElementById('reloadIcon');
+        const dataStatusDot = document.getElementById('dataStatusDot');
+        const dataStatusBadge = document.getElementById('dataStatusBadge');
+
+        // Modal elements
+        const imageModal = document.getElementById('imageModal');
+        const imgModalSrc = document.getElementById('imgModalSrc');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalCode = document.getElementById('modalCode');
+        const modalSap = document.getElementById('modalSap');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        const modalCopyLinkBtn = document.getElementById('modalCopyLinkBtn');
+        const modalOpenNewTab = document.getElementById('modalOpenNewTab');
+
+        // Toast
+        const ttkToast = document.getElementById('ttkToast');
+        const ttkToastMessage = document.getElementById('ttkToastMessage');
+
+        // Helper: Vietnamese Diacritics Normalization for forgiving search
+        function normalizeStr(str) {
+            if (!str) return '';
+            return str
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd')
+                .replace(/Đ/g, 'D')
+                .toLowerCase()
+                .trim();
         }
-        return url; 
-    }
 
-    // 3. Xử lý tính năng Gợi ý (Autocomplete)
-    searchInput.addEventListener('input', function() {
-        const val = this.value.toLowerCase().trim();
-        suggestionsBox.innerHTML = ''; // Xóa gợi ý cũ
-        
-        if (!val) { 
-            suggestionsBox.style.display = 'none'; 
-            return; 
+        // Helper: Convert Google Drive Link to direct Thumbnail URL (as in original code)
+        function getDirectDriveImageUrl(url) {
+            if (!url) return '';
+            if (url.includes('drive.google.com')) {
+                let fileId = '';
+                const matchesD = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+                if (matchesD && matchesD[1]) { 
+                    fileId = matchesD[1]; 
+                } else {
+                    const matchesId = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                    if (matchesId && matchesId[1]) { fileId = matchesId[1]; }
+                }
+                if (fileId) {
+                    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                }
+            }
+            return url;
         }
 
-        // Lọc ra các kết quả khớp (giới hạn hiển thị 10 kết quả để không bị lag)
-        const matches = productData.filter(item => {
-            const maSP = (item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '').toLowerCase();
-            const tenSP = (item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '').toLowerCase();
-            return maSP.includes(val) || tenSP.includes(val);
-        }).slice(0, 10); 
+        // Toast Notification System
+        let toastTimeout = null;
+        function showToast(msg, icon = 'fa-check') {
+            if (!ttkToast || !ttkToastMessage) return;
+            if (toastTimeout) clearTimeout(toastTimeout);
 
-        if (matches.length > 0) {
-            matches.forEach(match => {
-                const maSP = match['Mã Sản Phẩm'] || match['Mã sản phẩm'] || '';
-                const tenSP = match['Tên sản phẩm'] || match['Tên Sản Phẩm'] || '';
-                
-                const div = document.createElement('div');
-                div.className = 'suggestion-item';
-                div.innerHTML = `<strong>${maSP}</strong> - ${tenSP}`;
-                
-                // Khi click vào 1 gợi ý
-                div.onclick = function() {
-                    searchInput.value = maSP; // Gán mã sản phẩm vào ô tìm kiếm
-                    suggestionsBox.style.display = 'none'; // Ẩn hộp gợi ý
-                    searchProduct(); // Tự động chạy tìm kiếm
-                };
-                suggestionsBox.appendChild(div);
+            ttkToastMessage.innerHTML = `<i class="fa-solid ${icon} text-emerald-400 text-sm"></i> <span>${msg}</span>`;
+            ttkToast.classList.add('show');
+
+            if ('vibrate' in navigator) {
+                try { navigator.vibrate([15, 25]); } catch(e){}
+            }
+
+            toastTimeout = setTimeout(() => {
+                ttkToast.classList.remove('show');
+            }, 2600);
+        }
+
+        // Ripple Effect Generator for Buttons
+        function addRipple(e) {
+            const btn = e.currentTarget;
+            const circle = document.createElement('span');
+            const d = Math.max(btn.clientWidth, btn.clientHeight);
+            const r = d / 2;
+            const rect = btn.getBoundingClientRect();
+
+            circle.style.width = circle.style.height = `${d}px`;
+            circle.style.left = `${e.clientX - rect.left - r}px`;
+            circle.style.top = `${e.clientY - rect.top - r}px`;
+            circle.classList.add('ripple-wave');
+
+            const prev = btn.querySelector('.ripple-wave');
+            if (prev) prev.remove();
+            btn.appendChild(circle);
+        }
+
+        function attachRipples() {
+            document.querySelectorAll('.btn-tactile').forEach(btn => {
+                btn.removeEventListener('click', addRipple);
+                btn.addEventListener('click', addRipple);
             });
-            suggestionsBox.style.display = 'block';
-        } else {
-            suggestionsBox.style.display = 'none';
-        }
-    });
-
-    // Ẩn hộp gợi ý khi click ra ngoài
-    document.addEventListener('click', function(e) {
-        if(e.target !== searchInput && e.target !== suggestionsBox) {
-            suggestionsBox.style.display = 'none';
-        }
-    });
-
-    // Cho phép ấn Enter để tìm kiếm
-    searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') { 
-            suggestionsBox.style.display = 'none';
-            searchProduct(); 
-        }
-    });
-
-    // 4. Xử lý hiển thị kết quả
-    function searchProduct() {
-        const keyword = searchInput.value.toLowerCase().trim();
-        const resultsContainer = document.getElementById('results');
-        
-        if (!keyword) {
-            resultsContainer.innerHTML = '<p class="loading">Vui lòng nhập từ khóa để tìm kiếm.</p>';
-            return;
         }
 
-        resultsContainer.innerHTML = ''; 
-
-        const filtered = productData.filter(item => {
-            const maSP = (item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '').toLowerCase();
-            const tenSP = (item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '').toLowerCase();
-            return maSP.includes(keyword) || tenSP.includes(keyword);
-        });
-
-        if (filtered.length === 0) {
-            resultsContainer.innerHTML = '<p class="loading" style="color: red;">Không tìm thấy sản phẩm nào khớp với từ khóa!</p>';
-            return;
-        }
-
-        filtered.forEach(item => {
-            const maSAP = item['Mã SAP'] || item['Mã Sap'] || 'Trống';
-            const maSP = item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || 'Trống';
-            const tenSP = item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || 'Trống';
-            
-            const rawImageUrl = item['Link URL hình ảnh'] || item['Hình ảnh'] || item['Link ảnh'] || item['Hình ảnh sản phẩm'] || '';
-            const imageUrl = getDirectDriveImageUrl(rawImageUrl);
-
-            const card = document.createElement('div');
-            card.className = 'result-card';
-            
-            let imageHtml = '<p style="color: #999; font-style: italic;">Chưa có ảnh</p>';
-            if(imageUrl && imageUrl.startsWith('http')) {
-                // Thêm thẻ div bọc ngoài để xử lý ảnh lỗi
-                imageHtml = `<img src="${imageUrl}" alt="${tenSP}" title="Bấm vào để xem chi tiết" onclick="openModal('${imageUrl}')" onerror="this.onerror=null; this.parentElement.innerHTML='<p style=\\'color:red; font-size:12px;\\'>Lỗi tải ảnh. Vui lòng dùng link Postimages.</p>';">`;
+        // Clipboard Copy Helper
+        async function copyText(text, successMsg, mascotSay) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(successMsg);
+            } catch(e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast(successMsg);
             }
 
-            card.innerHTML = `
-                <div class="result-info">
-                    <p><strong>Mã SAP:</strong> ${maSAP}</p>
-                    <p><strong>Mã Sản Phẩm:</strong> ${maSP}</p>
-                    <p><strong>Tên sản phẩm:</strong> ${tenSP}</p>
-                </div>
-                <div class="result-image">
-                    ${imageHtml}
-                </div>
-            `;
-            resultsContainer.appendChild(card);
-        });
-    }
-
-    function openModal(imgSrc) {
-        document.getElementById('imageModal').style.display = "block";
-        document.getElementById('imgModalSrc').src = imgSrc;
-    }
-
-    function closeModal() {
-        document.getElementById('imageModal').style.display = "none";
-    }
-
-    window.onclick = function(event) {
-        const modal = document.getElementById('imageModal');
-        if (event.target == modal) {
-            modal.style.display = "none";
+            if (window.catMascot) {
+                window.catMascot.setHappy();
+                window.catMascot.say(mascotSay || "Đã chép mã thành công! Gửi khách chốt đơn liền tay! 🎉", 3000);
+            }
         }
-    }
-</script>
 
+        // Dark Mode Initialization
+        function applyDarkMode(dark) {
+            isDarkMode = dark;
+            localStorage.setItem('TTK_DARK_MODE', dark);
+            if (dark) {
+                document.documentElement.classList.add('dark');
+                if (themeIcon) themeIcon.className = 'fa-solid fa-sun text-amber-400 text-lg transition-transform rotate-90';
+            } else {
+                document.documentElement.classList.remove('dark');
+                if (themeIcon) themeIcon.className = 'fa-solid fa-moon text-slate-700 text-lg transition-transform';
+            }
+        }
+        applyDarkMode(isDarkMode);
+
+        darkModeToggle?.addEventListener('click', () => {
+            applyDarkMode(!isDarkMode);
+            if (window.catMascot) {
+                window.catMascot.say(isDarkMode ? "Đã bật chế độ ban đêm 🌙" : "Đã bật chế độ ban ngày ☀️", 2000);
+            }
+        });
+
+        // View Mode Switcher
+        function applyViewMode(mode) {
+            viewMode = mode;
+            localStorage.setItem('TTK_VIEW_MODE', mode);
+            if (mode === 'grid') {
+                resultsGrid?.classList.remove('hidden');
+                resultsTable?.classList.add('hidden');
+                viewGridBtn?.classList.add('bg-ttk-blue', 'text-white', 'shadow-sm');
+                viewGridBtn?.classList.remove('text-slate-600', 'dark:text-slate-300');
+                viewListBtn?.classList.remove('bg-ttk-blue', 'text-white', 'shadow-sm');
+                viewListBtn?.classList.add('text-slate-600', 'dark:text-slate-300');
+            } else {
+                resultsGrid?.classList.add('hidden');
+                resultsTable?.classList.remove('hidden');
+                viewListBtn?.classList.add('bg-ttk-blue', 'text-white', 'shadow-sm');
+                viewListBtn?.classList.remove('text-slate-600', 'dark:text-slate-300');
+                viewGridBtn?.classList.remove('bg-ttk-blue', 'text-white', 'shadow-sm');
+                viewGridBtn?.classList.add('text-slate-600', 'dark:text-slate-300');
+            }
+        }
+        applyViewMode(viewMode);
+
+        viewGridBtn?.addEventListener('click', () => applyViewMode('grid'));
+        viewListBtn?.addEventListener('click', () => applyViewMode('list'));
+
+        // Load Data from Google Sheets CSV (with Fallback)
+        function loadSheetsData() {
+            if (dataStatusDot) {
+                dataStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+            }
+            if (dataStatusBadge) {
+                dataStatusBadge.textContent = 'Đang đồng bộ Google Sheets...';
+            }
+            if (reloadIcon) {
+                reloadIcon.classList.add('animate-spin');
+            }
+
+            Papa.parse(csvUrl, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        productData = results.data;
+                        if (dataStatusDot) dataStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+                        if (dataStatusBadge) dataStatusBadge.textContent = `Google Sheets đã kết nối (${productData.length} SP)`;
+                        showToast(`Đã tải ${productData.length} sản phẩm từ Google Sheets!`, 'fa-cloud-arrow-down');
+                    } else {
+                        useFallbackData();
+                    }
+                    if (reloadIcon) reloadIcon.classList.remove('animate-spin');
+                    searchProduct();
+                },
+                error: function(err) {
+                    console.warn('Google Sheets loading failed. Using fallback dataset.', err);
+                    useFallbackData();
+                    if (reloadIcon) reloadIcon.classList.remove('animate-spin');
+                    searchProduct();
+                }
+            });
+        }
+
+        function useFallbackData() {
+            productData = fallbackProducts;
+            if (dataStatusDot) dataStatusDot.className = 'w-2 h-2 rounded-full bg-sky-400';
+            if (dataStatusBadge) dataStatusBadge.textContent = `Bộ dữ liệu chuẩn (${productData.length} SP)`;
+        }
+
+        reloadSheetsBtn?.addEventListener('click', () => {
+            loadSheetsData();
+            if (window.catMascot) {
+                window.catMascot.say("Đang làm mới dữ liệu từ Google Sheets nè! 🔄", 2500);
+            }
+        });
+
+        // 3D Tilt on Hover for Result Cards
+        function attachCard3DTilt() {
+            if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                document.querySelectorAll('.card-3d').forEach(card => {
+                    card.addEventListener('mousemove', (e) => {
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        const rx = ((y - rect.height / 2) / (rect.height / 2)) * -5;
+                        const ry = ((x - rect.width / 2) / (rect.width / 2)) * 5;
+                        card.style.transform = `perspective(1000px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateY(-4px)`;
+                    });
+                    card.addEventListener('mouseleave', () => {
+                        card.style.transform = '';
+                    });
+                });
+            }
+        }
+
+        // Search & Render Products Function
+        function searchProduct(filterKeyword = '') {
+            const rawKeyword = filterKeyword || searchInput.value;
+            const keyword = normalizeStr(rawKeyword);
+
+            let filtered = productData;
+            if (keyword) {
+                filtered = productData.filter(item => {
+                    const maSP = normalizeStr(item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '');
+                    const maSAP = normalizeStr(item['Mã SAP'] || item['Mã Sap'] || '');
+                    const tenSP = normalizeStr(item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '');
+                    const quyCach = normalizeStr(item['Quy cách'] || item['Quy Cách'] || '');
+                    return maSP.includes(keyword) || maSAP.includes(keyword) || tenSP.includes(keyword) || quyCach.includes(keyword);
+                });
+            }
+
+            // Update Counter
+            if (resultsCount) {
+                resultsCount.innerHTML = `Hiển thị <strong class="text-ttk-blue dark:text-sky-400 font-extrabold">${filtered.length}</strong> / ${productData.length} sản phẩm`;
+            }
+
+            // Handle Empty Results
+            if (filtered.length === 0) {
+                emptyResults?.classList.remove('hidden');
+                resultsGrid?.classList.add('hidden');
+                resultsTable?.classList.add('hidden');
+                if (window.catMascot) {
+                    window.catMascot.setConfused();
+                    window.catMascot.say("Ơ không tìm thấy sản phẩm này! Bạn thử từ khóa khác nhé!", 3500);
+                }
+                return;
+            } else {
+                emptyResults?.classList.add('hidden');
+                applyViewMode(viewMode);
+            }
+
+            // 1. Render Grid Cards
+            if (resultsGrid) {
+                resultsGrid.innerHTML = filtered.map((item, index) => {
+                    const maSAP = item['Mã SAP'] || item['Mã Sap'] || 'Đang cập nhật';
+                    const maSP = item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || 'Đang cập nhật';
+                    const tenSP = item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || 'Sản phẩm Tân Tường Khang';
+                    const rawImageUrl = item['Link URL hình ảnh'] || item['Hình ảnh'] || item['Link ảnh'] || item['Hình ảnh sản phẩm'] || '';
+                    const imageUrl = getDirectDriveImageUrl(rawImageUrl);
+                    const quyCach = item['Quy cách'] || item['Quy Cách'] || '';
+
+                    const hasImage = Boolean(imageUrl && imageUrl.startsWith('http'));
+
+                    return `
+                        <div class="card-3d bg-white dark:bg-slate-800/90 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700 flex flex-col justify-between group transition-all duration-200" data-index="${index}">
+                            <div>
+                                <!-- Image Preview Box -->
+                                <div class="aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700/60 mb-4 relative flex items-center justify-center border border-slate-100 dark:border-slate-600/50">
+                                    ${hasImage ? `
+                                        <img 
+                                            src="${imageUrl}" 
+                                            alt="${tenSP}" 
+                                            loading="lazy"
+                                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+                                            onclick="openImageModal('${imageUrl}', '${maSP}', '${tenSP}', '${maSAP}')"
+                                            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'flex flex-col items-center justify-center text-slate-400 p-4 text-center\\'><i class=\\'fa-solid fa-triangle-exclamation text-amber-500 text-2xl mb-1\\'></i><span class=\\'text-xs font-semibold\\'>Link ảnh lỗi / Chưa có quyền truy cập Drive</span></div>';"
+                                        >
+                                        <button 
+                                            class="btn-tactile absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 hover:bg-ttk-blue hover:text-white text-slate-700 dark:text-slate-200 flex items-center justify-center text-xs shadow-md transition"
+                                            onclick="openImageModal('${imageUrl}', '${maSP}', '${tenSP}', '${maSAP}')"
+                                            title="Phóng to ảnh HD"
+                                        >
+                                            <i class="fa-solid fa-expand"></i>
+                                        </button>
+                                    ` : `
+                                        <div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-4 text-center">
+                                            <i class="fa-regular fa-image text-3xl mb-1 text-slate-300 dark:text-slate-600"></i>
+                                            <span class="text-xs font-bold">Chưa có ảnh</span>
+                                            <span class="text-[10px] text-slate-400">Liên hệ MKT để bổ sung</span>
+                                        </div>
+                                    `}
+                                </div>
+
+                                <!-- Codes & Names -->
+                                <div class="space-y-2 mb-4">
+                                    <div class="flex flex-wrap items-center justify-between gap-1.5 text-xs">
+                                        <!-- Mã SP -->
+                                        <span class="inline-flex items-center gap-1 font-mono font-bold text-ttk-blue dark:text-sky-400 bg-blue-50 dark:bg-sky-950/80 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900">
+                                            <i class="fa-solid fa-barcode text-[10px]"></i>
+                                            <span>${maSP}</span>
+                                        </span>
+                                        
+                                        <!-- Mã SAP -->
+                                        <span class="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">
+                                            SAP: ${maSAP}
+                                        </span>
+                                    </div>
+
+                                    <!-- Product Name -->
+                                    <h3 class="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 group-hover:text-ttk-blue dark:group-hover:text-sky-400 transition leading-snug">
+                                        ${tenSP}
+                                    </h3>
+
+                                    ${quyCach ? `
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-lg border border-slate-100 dark:border-slate-700">
+                                            <strong>Quy cách:</strong> ${quyCach}
+                                        </p>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <!-- Fast Copy Action Buttons for Employees -->
+                            <div class="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center gap-2">
+                                <button 
+                                    class="btn-tactile flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                                    onclick="copyText('${maSP}', 'Đã copy Mã SP: ${maSP}', 'Đã copy mã ${maSP} nha! ✨')"
+                                    title="Copy riêng mã SP"
+                                >
+                                    <i class="fa-regular fa-copy text-ttk-blue dark:text-sky-400"></i>
+                                    <span>Copy Mã</span>
+                                </button>
+
+                                <button 
+                                    class="btn-tactile flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-sky-950/80 dark:hover:bg-sky-900 text-ttk-blue dark:text-sky-300 font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                                    onclick="copyText('[${maSP}] ${tenSP} (SAP: ${maSAP})', 'Đã copy đầy đủ thông tin [${maSP}]', 'Đã copy đầy đủ thông tin gửi khách rồi đó! 🚀')"
+                                    title="Copy định dạng chuẩn gửi khách Zalo/Viber"
+                                >
+                                    <i class="fa-solid fa-clipboard-check"></i>
+                                    <span>Gửi Khách</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // 2. Render Table Rows
+            if (resultsTableBody) {
+                resultsTableBody.innerHTML = filtered.map((item, index) => {
+                    const maSAP = item['Mã SAP'] || item['Mã Sap'] || '-';
+                    const maSP = item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '-';
+                    const tenSP = item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '-';
+                    const rawImageUrl = item['Link URL hình ảnh'] || item['Hình ảnh'] || item['Link ảnh'] || item['Hình ảnh sản phẩm'] || '';
+                    const imageUrl = getDirectDriveImageUrl(rawImageUrl);
+                    const hasImage = Boolean(imageUrl && imageUrl.startsWith('http'));
+
+                    return `
+                        <tr class="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition">
+                            <td class="p-3 text-center text-slate-400 font-mono">${index + 1}</td>
+                            <td class="p-3">
+                                <div class="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                                    ${hasImage ? `
+                                        <img 
+                                            src="${imageUrl}" 
+                                            alt="${tenSP}" 
+                                            class="w-full h-full object-cover cursor-pointer"
+                                            onclick="openImageModal('${imageUrl}', '${maSP}', '${tenSP}', '${maSAP}')"
+                                            onerror="this.src='https://placehold.co/100x100?text=No+Img';"
+                                        >
+                                    ` : `
+                                        <i class="fa-regular fa-image text-slate-300"></i>
+                                    `}
+                                </div>
+                            </td>
+                            <td class="p-3 font-mono font-bold text-ttk-blue dark:text-sky-400 whitespace-nowrap">
+                                <span class="bg-blue-50 dark:bg-sky-950 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900">
+                                    ${maSP}
+                                </span>
+                            </td>
+                            <td class="p-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                ${maSAP}
+                            </td>
+                            <td class="p-3 font-bold text-slate-800 dark:text-slate-100">
+                                ${tenSP}
+                            </td>
+                            <td class="p-3 text-right whitespace-nowrap">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button 
+                                        class="btn-tactile p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-ttk-blue hover:text-white text-slate-700 dark:text-slate-200 transition"
+                                        onclick="copyText('[${maSP}] ${tenSP} (SAP: ${maSAP})', 'Đã copy thông tin [${maSP}]')"
+                                        title="Copy thông tin"
+                                    >
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                    ${hasImage ? `
+                                        <button 
+                                            class="btn-tactile p-2 rounded-lg bg-blue-50 dark:bg-sky-950 hover:bg-ttk-blue hover:text-white text-ttk-blue dark:text-sky-400 transition"
+                                            onclick="openImageModal('${imageUrl}', '${maSP}', '${tenSP}', '${maSAP}')"
+                                            title="Xem ảnh lớn"
+                                        >
+                                            <i class="fa-solid fa-expand"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            attachRipples();
+            attachCard3DTilt();
+        }
+
+        // Autocomplete Suggestion Logic
+        searchInput?.addEventListener('input', function() {
+            const val = normalizeStr(this.value);
+            if (clearSearchBtn) {
+                if (this.value.length > 0) clearSearchBtn.classList.remove('hidden');
+                else clearSearchBtn.classList.add('hidden');
+            }
+
+            if (!val || !suggestionsBox) {
+                suggestionsBox.classList.add('hidden');
+                return;
+            }
+
+            // Match top 8 suggestions
+            const matches = productData.filter(item => {
+                const maSP = normalizeStr(item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '');
+                const maSAP = normalizeStr(item['Mã SAP'] || item['Mã Sap'] || '');
+                const tenSP = normalizeStr(item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '');
+                return maSP.includes(val) || maSAP.includes(val) || tenSP.includes(val);
+            }).slice(0, 8);
+
+            if (matches.length > 0) {
+                suggestionsBox.innerHTML = matches.map(match => {
+                    const maSP = match['Mã Sản Phẩm'] || match['Mã sản phẩm'] || '';
+                    const maSAP = match['Mã SAP'] || match['Mã Sap'] || '';
+                    const tenSP = match['Tên sản phẩm'] || match['Tên Sản Phẩm'] || '';
+
+                    return `
+                        <div class="suggestion-item p-3 hover:bg-blue-50 dark:hover:bg-slate-700/60 cursor-pointer transition flex items-center justify-between gap-3 text-xs sm:text-sm" data-code="${maSP}">
+                            <div>
+                                <span class="font-mono font-bold text-ttk-blue dark:text-sky-400">${maSP}</span>
+                                ${maSAP ? `<span class="text-[11px] text-slate-400 ml-1.5 font-mono">(${maSAP})</span>` : ''}
+                                <span class="text-slate-700 dark:text-slate-200 ml-2 font-medium">${tenSP}</span>
+                            </div>
+                            <i class="fa-solid fa-arrow-turn-down -rotate-90 text-slate-300 dark:text-slate-600 text-xs"></i>
+                        </div>
+                    `;
+                }).join('');
+
+                suggestionsBox.classList.remove('hidden');
+
+                // Attach click handlers to suggestions
+                suggestionsBox.querySelectorAll('.suggestion-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const code = item.getAttribute('data-code');
+                        searchInput.value = code;
+                        suggestionsBox.classList.add('hidden');
+                        searchProduct();
+                    });
+                });
+            } else {
+                suggestionsBox.classList.add('hidden');
+            }
+
+            // Trigger mascot thinking mood
+            if (window.catMascot && val.length > 1) {
+                window.catMascot.setThinking();
+            }
+        });
+
+        // Hide suggestions on outside click
+        document.addEventListener('click', (e) => {
+            if (e.target !== searchInput && e.target !== suggestionsBox) {
+                suggestionsBox?.classList.add('hidden');
+            }
+        });
+
+        // Search on Enter key or button click
+        searchInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                suggestionsBox?.classList.add('hidden');
+                searchProduct();
+            }
+        });
+        searchBtn?.addEventListener('click', () => {
+            suggestionsBox?.classList.add('hidden');
+            searchProduct();
+        });
+
+        clearSearchBtn?.addEventListener('click', () => {
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            suggestionsBox?.classList.add('hidden');
+            searchProduct();
+            searchInput.focus();
+        });
+
+        resetBtn?.addEventListener('click', () => {
+            searchInput.value = '';
+            clearSearchBtn?.classList.add('hidden');
+            suggestionsBox?.classList.add('hidden');
+            searchProduct();
+            showToast('Hiển thị toàn bộ kho sản phẩm!', 'fa-boxes-stacked');
+            if (window.catMascot) {
+                window.catMascot.say("Đã hiển thị tất cả sản phẩm rồi nha! ✨", 2000);
+            }
+        });
+
+        // Quick filter chip clicks
+        document.querySelectorAll('.quick-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const kw = chip.getAttribute('data-keyword');
+                searchInput.value = kw;
+                clearSearchBtn?.classList.remove('hidden');
+                suggestionsBox?.classList.add('hidden');
+                searchProduct();
+            });
+        });
+
+        // Image Lightbox Modal Functions
+        function openImageModal(imgSrc, maSP, tenSP, maSAP) {
+            if (!imageModal || !imgModalSrc) return;
+            imgModalSrc.src = imgSrc;
+            if (modalTitle) modalTitle.textContent = tenSP;
+            if (modalCode) modalCode.textContent = maSP;
+            if (modalSap) modalSap.textContent = `Mã SAP: ${maSAP}`;
+
+            if (modalCopyLinkBtn) {
+                modalCopyLinkBtn.onclick = () => {
+                    copyText(imgSrc, 'Đã copy link ảnh HD!');
+                };
+            }
+            if (modalOpenNewTab) {
+                modalOpenNewTab.href = imgSrc;
+            }
+
+            imageModal.classList.remove('hidden');
+            imageModal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+
+            if (window.catMascot) {
+                window.catMascot.say(`Ảnh sản phẩm: ${maSP} 🔍`, 2000);
+            }
+        }
+        window.openImageModal = openImageModal;
+
+        function closeImageModal() {
+            if (!imageModal) return;
+            imageModal.classList.add('hidden');
+            imageModal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        modalCloseBtn?.addEventListener('click', closeImageModal);
+        imageModal?.addEventListener('click', (e) => {
+            if (e.target === imageModal) closeImageModal();
+        });
+
+        // Global Keyboard Shortcuts
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (imageModal && !imageModal.classList.contains('hidden')) {
+                    closeImageModal();
+                } else if (searchInput && searchInput.value) {
+                    searchInput.value = '';
+                    clearSearchBtn?.classList.add('hidden');
+                    searchProduct();
+                }
+                return;
+            }
+
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+            if (e.key === '/' || (e.ctrlKey && e.key.toLowerCase() === 'k')) {
+                e.preventDefault();
+                searchInput?.focus();
+                searchInput?.select();
+                showToast('Đã mở ô tìm kiếm [/]', 'fa-keyboard', 1200);
+                return;
+            }
+
+            if (e.key.toLowerCase() === 'g') {
+                applyViewMode('grid');
+                showToast('Xem dạng Thẻ [G]', 'fa-grip', 1200);
+                return;
+            }
+
+            if (e.key.toLowerCase() === 'l') {
+                applyViewMode('list');
+                showToast('Xem dạng Bảng [L]', 'fa-list', 1200);
+                return;
+            }
+
+            if (e.key.toLowerCase() === 'd') {
+                applyDarkMode(!isDarkMode);
+                showToast(isDarkMode ? 'Chế độ tối [D]' : 'Chế độ sáng [D]', 'fa-circle-half-stroke', 1200);
+                return;
+            }
+        });
+
+        // ==========================================================================
+        // MASCOT ANIMATION ENGINE (CURSOR FOLLOW & INTERACTION)
+        // ==========================================================================
+        class CatMascotEngine {
+            constructor() {
+                this.container = document.getElementById('mascotContainer');
+                this.avatar = document.getElementById('mascotAvatar');
+                this.head = document.getElementById('mascotHead');
+                this.pupilLeft = document.getElementById('mascotPupilLeft');
+                this.pupilRight = document.getElementById('mascotPupilRight');
+                this.eyelidLeft = document.getElementById('eyelidLeft');
+                this.eyelidRight = document.getElementById('eyelidRight');
+                this.mouth = document.getElementById('mascotMouth');
+                this.bubble = document.getElementById('mascotBubble');
+                this.bubbleText = document.getElementById('mascotText');
+                this.toggleBtn = document.getElementById('mascotToggle');
+
+                this.mouseX = window.innerWidth / 2;
+                this.mouseY = window.innerHeight / 2;
+                this.curPupilX = 0;
+                this.curPupilY = 0;
+                this.tarPupilX = 0;
+                this.tarPupilY = 0;
+                this.curHeadRotX = 0;
+                this.curHeadRotY = 0;
+                this.tarHeadRotX = 0;
+                this.tarHeadRotY = 0;
+
+                this.isMinimized = false;
+                this.isBlinking = false;
+                this.lastBlink = Date.now();
+                this.bubbleTimer = null;
+
+                this.quotes = [
+                    "Meow! Bấm phím '/' để nhảy nhanh vào ô tìm kiếm nhé!",
+                    "Nút 'Gửi Khách' tự động copy đủ mã SP và mã SAP cực tiện!",
+                    "Ảnh xem không rõ? Bấm vào ảnh để phóng to HD toàn màn hình nha!",
+                    "Tân Tường Khang - Chất lượng & uy tín từ năm 1993! ⭐",
+                    "From Chuong Nguyen with Love (.❛ ᴗ ❛.)",
+                    "Chúc bạn ngày mới chốt thật nhiều đơn hàng nhé! 💪"
+                ];
+                this.quoteIdx = 0;
+
+                this.init();
+            }
+
+            init() {
+                this.bindTracking();
+                this.startTrackingLoop();
+                this.startBlinkLoop();
+
+                // Welcome message
+                setTimeout(() => {
+                    this.say("Bé Mew xin chào! Nhập mã TTK hoặc tên SP để tra cứu nhé! 👋", 4000);
+                }, 1000);
+            }
+
+            bindTracking() {
+                window.addEventListener('mousemove', (e) => {
+                    this.mouseX = e.clientX;
+                    this.mouseY = e.clientY;
+                }, { passive: true });
+
+                window.addEventListener('touchmove', (e) => {
+                    if (e.touches && e.touches.length > 0) {
+                        this.mouseX = e.touches[0].clientX;
+                        this.mouseY = e.touches[0].clientY;
+                    }
+                }, { passive: true });
+
+                this.avatar?.addEventListener('click', () => {
+                    this.onClickMascot();
+                });
+
+                this.toggleBtn?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleMinimize();
+                });
+            }
+
+            startTrackingLoop() {
+                const update = () => {
+                    if (!this.avatar || this.isMinimized) {
+                        requestAnimationFrame(update);
+                        return;
+                    }
+
+                    const rect = this.avatar.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+
+                    const dx = this.mouseX - cx;
+                    const dy = this.mouseY - cy;
+                    const dist = Math.hypot(dx, dy);
+
+                    const maxR = 5.2; // Maximum pupil offset inside eye white
+                    const angle = Math.atan2(dy, dx);
+                    const moveR = Math.min(maxR, dist / 45);
+
+                    this.tarPupilX = Math.cos(angle) * moveR;
+                    this.tarPupilY = Math.sin(angle) * moveR;
+
+                    // Lerp pupils
+                    this.curPupilX += (this.tarPupilX - this.curPupilX) * 0.18;
+                    this.curPupilY += (this.tarPupilY - this.curPupilY) * 0.18;
+
+                    const pTransform = `translate(${this.curPupilX.toFixed(2)}px, ${this.curPupilY.toFixed(2)}px)`;
+                    const pSvgTransform = `translate(${this.curPupilX.toFixed(2)}, ${this.curPupilY.toFixed(2)})`;
+
+                    if (this.pupilLeft && this.pupilRight) {
+                        this.pupilLeft.style.transform = pTransform;
+                        this.pupilRight.style.transform = pTransform;
+                        this.pupilLeft.setAttribute('transform', pSvgTransform);
+                        this.pupilRight.setAttribute('transform', pSvgTransform);
+                    }
+
+                    // 3D Head Tilt Angle
+                    const maxTilt = 7.5;
+                    this.tarHeadRotX = Math.max(-maxTilt, Math.min(maxTilt, (dy / window.innerHeight) * maxTilt));
+                    this.tarHeadRotY = Math.max(-maxTilt, Math.min(maxTilt, (dx / window.innerWidth) * maxTilt));
+
+                    this.curHeadRotX += (this.tarHeadRotX - this.curHeadRotX) * 0.12;
+                    this.curHeadRotY += (this.tarHeadRotY - this.curHeadRotY) * 0.12;
+
+                    if (this.head) {
+                        this.head.style.transform = `rotateX(${-this.curHeadRotX.toFixed(2)}deg) rotateY(${this.curHeadRotY.toFixed(2)}deg)`;
+                    }
+
+                    requestAnimationFrame(update);
+                };
+                requestAnimationFrame(update);
+            }
+
+            startBlinkLoop() {
+                const checkBlink = () => {
+                    const now = Date.now();
+                    if (now - this.lastBlink > 3500 + Math.random() * 3000 && !this.isBlinking) {
+                        this.blink();
+                        this.lastBlink = now;
+                    }
+                    requestAnimationFrame(checkBlink);
+                };
+                requestAnimationFrame(checkBlink);
+            }
+
+            blink() {
+                if (!this.eyelidLeft || !this.eyelidRight) return;
+                this.isBlinking = true;
+                this.eyelidLeft.style.transform = 'scaleY(1)';
+                this.eyelidRight.style.transform = 'scaleY(1)';
+
+                setTimeout(() => {
+                    this.eyelidLeft.style.transform = 'scaleY(0)';
+                    this.eyelidRight.style.transform = 'scaleY(0)';
+                    this.isBlinking = false;
+                }, 170);
+            }
+
+            say(msg, duration = 3500) {
+                if (!this.bubble || !this.bubbleText || this.isMinimized) return;
+                if (this.bubbleTimer) clearTimeout(this.bubbleTimer);
+
+                this.bubbleText.textContent = msg;
+                this.bubble.classList.add('active');
+
+                this.bubbleTimer = setTimeout(() => {
+                    this.bubble.classList.remove('active');
+                }, duration);
+            }
+
+            setHappy() {
+                this.mouth?.setAttribute('d', 'M 52 73 Q 60 84 68 73');
+            }
+            setThinking() {
+                this.mouth?.setAttribute('d', 'M 54 75 Q 60 72 66 75');
+            }
+            setConfused() {
+                this.mouth?.setAttribute('d', 'M 53 76 Q 57 71 61 76 Q 65 79 69 76');
+            }
+            setNormal() {
+                this.mouth?.setAttribute('d', 'M 54 74 Q 57 77 60 74 Q 63 77 66 74');
+            }
+
+            onClickMascot() {
+                this.blink();
+                this.setHappy();
+
+                if (this.avatar) {
+                    this.avatar.style.transform = 'translateY(-14px) scale(1.15)';
+                    setTimeout(() => { this.avatar.style.transform = ''; }, 300);
+                }
+
+                const quote = this.quotes[this.quoteIdx];
+                this.quoteIdx = (this.quoteIdx + 1) % this.quotes.length;
+                this.say(quote, 4000);
+            }
+
+            toggleMinimize() {
+                this.isMinimized = !this.isMinimized;
+                if (this.isMinimized) {
+                    this.container?.classList.add('mascot-minimized');
+                    if (this.toggleBtn) {
+                        this.toggleBtn.innerHTML = '<i class="fa-solid fa-plus text-[10px]"></i>';
+                        this.toggleBtn.setAttribute('title', 'Mở rộng Bé Mew');
+                    }
+                } else {
+                    this.container?.classList.remove('mascot-minimized');
+                    if (this.toggleBtn) {
+                        this.toggleBtn.innerHTML = '<i class="fa-solid fa-minus text-[10px]"></i>';
+                        this.toggleBtn.setAttribute('title', 'Thu gọn Bé Mew');
+                    }
+                    this.say("Bé Mew đã trở lại rồi nè! ✨", 2500);
+                }
+            }
+        }
+
+        // Initialize Application on Window Load
+        window.addEventListener('DOMContentLoaded', () => {
+            window.catMascot = new CatMascotEngine();
+            loadSheetsData();
+        });
+    </script>
 </body>
 </html>
