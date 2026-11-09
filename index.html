@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Fira+Code:wght@500;600&display=swap" rel="stylesheet">
 
-    <!-- PapaParse for Google Sheets CSV -->
+    <!-- PapaParse for Data CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
     <!-- Tailwind CSS CDN -->
@@ -293,7 +293,7 @@
             <div class="flex items-center gap-2 sm:gap-3">
                 <span class="inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
                     <span id="dataStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                    <span id="dataStatusBadge">Đang kết nối Google Sheets...</span>
+                    <span id="dataStatusBadge">Đang kết nối Data...</span>
                 </span>
                 <span class="hidden md:inline text-blue-200">|</span>
                 <span class="hidden sm:inline-flex items-center gap-1.5 text-blue-100 text-xs">
@@ -379,7 +379,7 @@
                     <button 
                         id="reloadSheetsBtn"
                         class="btn-tactile p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition"
-                        title="Tải lại dữ liệu Google Sheets mới nhất"
+                        title="Tải lại dữ liệu Data mới nhất"
                     >
                         <i id="reloadIcon" class="fa-solid fa-arrows-rotate text-ttk-blue dark:text-sky-400 text-base"></i>
                     </button>
@@ -753,7 +753,7 @@
 
     <!-- MAIN JAVASCRIPT APPLICATION -->
     <script>
-        // 1. Google Sheets CSV Configuration (Exact URL from Chuong Nguyen)
+        // 1. Data CSV Configuration (Exact URL from Chuong Nguyen)
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSh8BRFK8LmWiL_by_a9BZ2CjxVGRwQ84TJn1WVfXe9cft2q74AjnTy1sDZLG0DysHzdEeCi_cojpOB/pub?output=csv';
 
         // 2. High-Quality Offline Fallback Data (So tool works 100% even if Sheets is loading or offline)
@@ -1009,13 +1009,13 @@
         viewGridBtn?.addEventListener('click', () => applyViewMode('grid'));
         viewListBtn?.addEventListener('click', () => applyViewMode('list'));
 
-        // Load Data from Google Sheets CSV (with Fallback)
+        // Load Data from Data CSV (with Fallback)
         function loadSheetsData() {
             if (dataStatusDot) {
                 dataStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
             }
             if (dataStatusBadge) {
-                dataStatusBadge.textContent = 'Đang đồng bộ Google Sheets...';
+                dataStatusBadge.textContent = 'Đang đồng bộ Data...';
             }
             if (reloadIcon) {
                 reloadIcon.classList.add('animate-spin');
@@ -1029,8 +1029,8 @@
                     if (results.data && results.data.length > 0) {
                         productData = results.data;
                         if (dataStatusDot) dataStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-                        if (dataStatusBadge) dataStatusBadge.textContent = `Google Sheets đã kết nối (${productData.length} SP)`;
-                        showToast(`Đã tải ${productData.length} sản phẩm từ Google Sheets!`, 'fa-cloud-arrow-down');
+                        if (dataStatusBadge) dataStatusBadge.textContent = `Data đã kết nối (${productData.length} SP)`;
+                        showToast(`Đã tải ${productData.length} sản phẩm`, 'fa-cloud-arrow-down');
                     } else {
                         useFallbackData();
                     }
@@ -1038,7 +1038,7 @@
                     searchProduct();
                 },
                 error: function(err) {
-                    console.warn('Google Sheets loading failed. Using fallback dataset.', err);
+                    console.warn('Data loading failed. Using fallback dataset.', err);
                     useFallbackData();
                     if (reloadIcon) reloadIcon.classList.remove('animate-spin');
                     searchProduct();
@@ -1055,7 +1055,7 @@
         reloadSheetsBtn?.addEventListener('click', () => {
             loadSheetsData();
             if (window.catMascot) {
-                window.catMascot.say("Đang làm mới dữ liệu từ Google Sheets nè! 🔄", 2500);
+                window.catMascot.say("Đang làm mới dữ liệu từ Data nè! 🔄", 2500);
             }
         });
 
