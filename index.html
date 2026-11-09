@@ -1077,21 +1077,144 @@
                 });
             }
         }
+        // ==========================================================================
+        // SMART RELEVANCE SCORING ALGORITHM (BÁM SÁT TỪ KHÓA)
+        // Giải quyết triệt để vấn đề: Tìm "Ống" bị dính "Tổng hợp", "Đóng gói"...
+        // ==========================================================================
+        function getSearchScore(item, rawQuery) {
+            if (!rawQuery) return 1;
+            const query = rawQuery.trim();
+            const queryNorm = normalizeStr(query);
+            if (!queryNorm) return 1;
 
-        // Search & Render Products Function
+            const tenRaw = (item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '').trim();
+            const maRaw = (item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '').trim();
+            const sapRaw = (item['Mã SAP'] || item['Mã Sap'] || '').trim();
+            const qcRaw = (item['Quy cách'] || item['Quy Cách'] || '').trim();
+
+            const tenNorm = normalizeStr(tenRaw);
+            const maNorm = normalizeStr(maRaw);
+            const sapNorm = normalizeStr(sapRaw);
+            const qcNorm = normalizeStr(qcRaw);
+
+            let score = 0;
+
+            // Tách các từ riêng biệt bằng khoảng trắng và ký tự đặc biệt
+            const wordsRaw = tenRaw.toLowerCase().split(/[\s,./\-+()_:]+/).filter(Boolean);
+            const wordsNorm = tenNorm.split(/[\s,./\-+()_:]+/).filter(Boolean);
+            const maWords = maNorm.split(/[\s,./\-+()_:]+/).filter(Boolean);
+            const qcWords = qcNorm.split(/[\s,./\-+()_:]+/).filter(Boolean);
+
+            const isAccented = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(query);
+            const queryLower = query.toLowerCase();
+
+            // 1. Khớp từ chính xác có dấu tiếng Việt (Ưu tiên số 1 - ví dụ người dùng gõ "ống" hoặc "hộp")
+            if (isAccented) {
+                if (wordsRaw.includes(queryLower)) {
+                    score += 1500;
+                    if (wordsRaw[0] === queryLower) score += 500; // Là từ đầu tiên trong tên SP
+                } else if (wordsRaw.some(w => w.startsWith(queryLower))) {
+                    score += 900;
+                    if (wordsRaw[0].startsWith(queryLower)) score += 300;
+                } else if (tenRaw.toLowerCase().includes(queryLower)) {
+                    score += 400;
+                }
+            }
+
+            // 2. Khớp từ đã chuẩn hóa không dấu (Dành cho người gõ "ong" ra "ống")
+            if (wordsNorm.includes(queryNorm)) {
+                score += 800;
+                if (wordsNorm[0] === queryNorm) score += 400; // Từ đầu tiên
+            } else if (wordsNorm.some(w => w.startsWith(queryNorm))) {
+                score += 500;
+                if (wordsNorm[0].startsWith(queryNorm)) score += 200;
+            }
+
+            // 3. Khớp Mã Sản Phẩm (e.g. OH12, TTK-OH)
+            if (maNorm === queryNorm) {
+                score += 1200;
+            } else if (maWords.includes(queryNorm) || maNorm.startsWith(queryNorm)) {
+                score += 850;
+            } else if (maNorm.includes(queryNorm)) {
+                score += 450;
+            }
+
+            // 4. Khớp Mã SAP
+            if (sapNorm === queryNorm) {
+                score += 1000;
+            } else if (sapNorm.startsWith(queryNorm)) {
+                score += 600;
+            } else if (sapNorm.includes(queryNorm)) {
+                score += 300;
+            }
+
+            // 5. Khớp Quy cách (specs)
+            if (qcWords.includes(queryNorm)) {
+                score += 250;
+            } else if (qcWords.some(w => w.startsWith(queryNorm))) {
+                score += 150;
+            }
+
+            // 6. Tìm kiếm cụm từ nhiều từ (e.g. "ong hut nhon", "ly 700", "hop com 4 ngan")
+            const queryTokens = queryNorm.split(/\s+/).filter(Boolean);
+            if (queryTokens.length > 1) {
+                const allTokensMatch = queryTokens.every(tok => 
+                    wordsNorm.some(w => w.startsWith(tok) || w === tok) || 
+                    maNorm.includes(tok) || 
+                    sapNorm.includes(tok) ||
+                    qcWords.some(w => w.startsWith(tok) || w === tok)
+                );
+                if (allTokensMatch) score += 600;
+            }
+
+            // QUY TẮC CỐT LÕI:
+            // Nếu từ khóa tìm kiếm ngắn (<= 3 ký tự, ví dụ: "ong", "ly", "hop"),
+            // TUYỆT ĐỐI KHÔNG nhận các từ con nằm bên trong từ khác như "t-ong" (tổng), "d-ong" (đóng), "ch-ong" (chống)!
+            if (queryNorm.length <= 3) {
+                if (score < 200) return 0; // Loại bỏ hoàn toàn kết quả sai!
+            } else {
+                if (score === 0) {
+                    if (tenNorm.includes(queryNorm) || maNorm.includes(queryNorm)) {
+                        score += 50;
+                    }
+                }
+            }
+
+            return score;
+        }
+
+        // Helper: Highlight từ khóa trong kết quả tìm kiếm
+        function highlightKeyword(text, rawQuery) {
+            if (!rawQuery || !text) return text;
+            try {
+                const q = rawQuery.trim();
+                const terms = q.split(/\s+/).filter(Boolean);
+                let result = text;
+                terms.forEach(term => {
+                    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    result = result.replace(regex, '<mark class="bg-amber-200 dark:bg-amber-500/40 text-slate-900 dark:text-amber-100 px-0.5 rounded font-bold">$1</mark>');
+                });
+                return result;
+            } catch(e) {
+                return text;
+            }
+        }
+
+        // Search & Render Products Function with Precision Ranking
         function searchProduct(filterKeyword = '') {
-            const rawKeyword = filterKeyword || searchInput.value;
-            const keyword = normalizeStr(rawKeyword);
+            const rawKeyword = (filterKeyword || searchInput.value || '').trim();
 
             let filtered = productData;
-            if (keyword) {
-                filtered = productData.filter(item => {
-                    const maSP = normalizeStr(item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '');
-                    const maSAP = normalizeStr(item['Mã SAP'] || item['Mã Sap'] || '');
-                    const tenSP = normalizeStr(item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '');
-                    const quyCach = normalizeStr(item['Quy cách'] || item['Quy Cách'] || '');
-                    return maSP.includes(keyword) || maSAP.includes(keyword) || tenSP.includes(keyword) || quyCach.includes(keyword);
-                });
+            if (rawKeyword) {
+                // Chấm điểm mức độ liên quan cho từng sản phẩm
+                const scored = productData.map(item => ({
+                    item,
+                    score: getSearchScore(item, rawKeyword)
+                })).filter(res => res.score > 0);
+
+                // Sắp xếp sản phẩm điểm cao nhất (bám sát từ khóa nhất) lên đầu!
+                scored.sort((a, b) => b.score - a.score);
+                filtered = scored.map(res => res.item);
             }
 
             // Update Counter
@@ -1125,6 +1248,8 @@
                     const quyCach = item['Quy cách'] || item['Quy Cách'] || '';
 
                     const hasImage = Boolean(imageUrl && imageUrl.startsWith('http'));
+                    const highlightedName = rawKeyword ? highlightKeyword(tenSP, rawKeyword) : tenSP;
+                    const highlightedCode = rawKeyword ? highlightKeyword(maSP, rawKeyword) : maSP;
 
                     return `
                         <div class="card-3d bg-white dark:bg-slate-800/90 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700 flex flex-col justify-between group transition-all duration-200" data-index="${index}">
@@ -1162,7 +1287,7 @@
                                         <!-- Mã SP -->
                                         <span class="inline-flex items-center gap-1 font-mono font-bold text-ttk-blue dark:text-sky-400 bg-blue-50 dark:bg-sky-950/80 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-900">
                                             <i class="fa-solid fa-barcode text-[10px]"></i>
-                                            <span>${maSP}</span>
+                                            <span>${highlightedCode}</span>
                                         </span>
                                         
                                         <!-- Mã SAP -->
@@ -1173,7 +1298,7 @@
 
                                     <!-- Product Name -->
                                     <h3 class="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 group-hover:text-ttk-blue dark:group-hover:text-sky-400 transition leading-snug">
-                                        ${tenSP}
+                                        ${highlightedName}
                                     </h3>
 
                                     ${quyCach ? `
@@ -1218,6 +1343,7 @@
                     const rawImageUrl = item['Link URL hình ảnh'] || item['Hình ảnh'] || item['Link ảnh'] || item['Hình ảnh sản phẩm'] || '';
                     const imageUrl = getDirectDriveImageUrl(rawImageUrl);
                     const hasImage = Boolean(imageUrl && imageUrl.startsWith('http'));
+                    const highlightedName = rawKeyword ? highlightKeyword(tenSP, rawKeyword) : tenSP;
 
                     return `
                         <tr class="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 transition">
@@ -1246,7 +1372,7 @@
                                 ${maSAP}
                             </td>
                             <td class="p-3 font-bold text-slate-800 dark:text-slate-100">
-                                ${tenSP}
+                                ${highlightedName}
                             </td>
                             <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1.5">
@@ -1277,39 +1403,45 @@
             attachCard3DTilt();
         }
 
-        // Autocomplete Suggestion Logic
+        // Smart Autocomplete Suggestion Logic with Precision Ranking
         searchInput?.addEventListener('input', function() {
-            const val = normalizeStr(this.value);
+            const rawVal = this.value.trim();
             if (clearSearchBtn) {
-                if (this.value.length > 0) clearSearchBtn.classList.remove('hidden');
+                if (rawVal.length > 0) clearSearchBtn.classList.remove('hidden');
                 else clearSearchBtn.classList.add('hidden');
             }
 
-            if (!val || !suggestionsBox) {
+            if (!rawVal || !suggestionsBox) {
                 suggestionsBox.classList.add('hidden');
                 return;
             }
 
-            // Match top 8 suggestions
-            const matches = productData.filter(item => {
-                const maSP = normalizeStr(item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '');
-                const maSAP = normalizeStr(item['Mã SAP'] || item['Mã Sap'] || '');
-                const tenSP = normalizeStr(item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '');
-                return maSP.includes(val) || maSAP.includes(val) || tenSP.includes(val);
-            }).slice(0, 8);
+            // Chấm điểm mức độ liên quan cho danh sách gợi ý
+            const scoredMatches = productData.map(item => ({
+                item,
+                score: getSearchScore(item, rawVal)
+            })).filter(res => res.score > 0);
 
-            if (matches.length > 0) {
-                suggestionsBox.innerHTML = matches.map(match => {
+            // Sắp xếp điểm cao nhất lên đầu (những SP có từ "Ống" sẽ đứng đầu!)
+            scoredMatches.sort((a, b) => b.score - a.score);
+
+            const topMatches = scoredMatches.slice(0, 8).map(res => res.item);
+
+            if (topMatches.length > 0) {
+                suggestionsBox.innerHTML = topMatches.map(match => {
                     const maSP = match['Mã Sản Phẩm'] || match['Mã sản phẩm'] || '';
                     const maSAP = match['Mã SAP'] || match['Mã Sap'] || '';
                     const tenSP = match['Tên sản phẩm'] || match['Tên Sản Phẩm'] || '';
 
+                    const highlightedName = highlightKeyword(tenSP, rawVal);
+                    const highlightedCode = highlightKeyword(maSP, rawVal);
+
                     return `
                         <div class="suggestion-item p-3 hover:bg-blue-50 dark:hover:bg-slate-700/60 cursor-pointer transition flex items-center justify-between gap-3 text-xs sm:text-sm" data-code="${maSP}">
                             <div>
-                                <span class="font-mono font-bold text-ttk-blue dark:text-sky-400">${maSP}</span>
+                                <span class="font-mono font-bold text-ttk-blue dark:text-sky-400">${highlightedCode}</span>
                                 ${maSAP ? `<span class="text-[11px] text-slate-400 ml-1.5 font-mono">(${maSAP})</span>` : ''}
-                                <span class="text-slate-700 dark:text-slate-200 ml-2 font-medium">${tenSP}</span>
+                                <span class="text-slate-700 dark:text-slate-200 ml-2 font-medium">${highlightedName}</span>
                             </div>
                             <i class="fa-solid fa-arrow-turn-down -rotate-90 text-slate-300 dark:text-slate-600 text-xs"></i>
                         </div>
@@ -1332,7 +1464,7 @@
             }
 
             // Trigger mascot thinking mood
-            if (window.catMascot && val.length > 1) {
+            if (window.catMascot && rawVal.length > 1) {
                 window.catMascot.setThinking();
             }
         });
