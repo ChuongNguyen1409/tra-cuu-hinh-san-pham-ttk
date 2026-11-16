@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
@@ -134,6 +134,19 @@
         @keyframes shimmerEffect {
             0% { left: -60%; }
             100% { left: 140%; }
+        }
+
+                /* Search Keyword Highlight */
+        .highlight-term {
+            background-color: #fef08a;
+            color: #0f172a;
+            padding: 1px 3px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+        html.dark .highlight-term {
+            background-color: rgba(245, 158, 11, 0.45);
+            color: #fef3c7;
         }
 
         /* 3D Tilt Cards */
@@ -1182,19 +1195,24 @@
 
             return score;
         }
-
-        // Helper: Highlight từ khóa trong kết quả tìm kiếm
+        // Helper: Highlight tu khoa trong ket qua tim kiem (Single pass regex, an toan tuyet doi)
         function highlightKeyword(text, rawQuery) {
             if (!rawQuery || !text) return text;
             try {
-                const q = rawQuery.trim();
-                const terms = q.split(/\s+/).filter(Boolean);
-                let result = text;
-                terms.forEach(term => {
-                    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                    result = result.replace(regex, '<mark class="bg-amber-200 dark:bg-amber-500/40 text-slate-900 dark:text-amber-100 px-0.5 rounded font-bold">$1</mark>');
-                });
-                return result;
+                const str = String(text);
+                const terms = rawQuery.trim().split(/\s+/).filter(Boolean);
+                if (terms.length === 0) return str;
+
+                const escapedTerms = terms
+                    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                    .filter(Boolean)
+                    .sort((a, b) => b.length - a.length);
+
+                if (escapedTerms.length === 0) return str;
+
+                // Quet 1 lan duy nhat: tuyet doi khong de quy vao the HTML vua tao
+                const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+                return str.replace(regex, '<mark class="highlight-term">$1</mark>');
             } catch(e) {
                 return text;
             }
@@ -1202,6 +1220,7 @@
 
         // Search & Render Products Function with Precision Ranking
         function searchProduct(filterKeyword = '') {
+
             const rawKeyword = (filterKeyword || searchInput.value || '').trim();
 
             let filtered = productData;
@@ -1424,30 +1443,28 @@
 
             // Sắp xếp điểm cao nhất lên đầu (những SP có từ "Ống" sẽ đứng đầu!)
             scoredMatches.sort((a, b) => b.score - a.score);
-
             const topMatches = scoredMatches.slice(0, 8).map(res => res.item);
 
             if (topMatches.length > 0) {
                 suggestionsBox.innerHTML = topMatches.map(match => {
-                    const maSP = match['Mã Sản Phẩm'] || match['Mã sản phẩm'] || '';
-                    const maSAP = match['Mã SAP'] || match['Mã Sap'] || '';
-                    const tenSP = match['Tên sản phẩm'] || match['Tên Sản Phẩm'] || '';
+                    const maSP = match['M\u00E3 S\u1EA3n Ph\u1EA9m'] || match['M\u00E3 s\u1EA3n ph\u1EA9m'] || match['MÃ£ Sáº£n Pháº©m'] || match['MÃ£ sáº£n pháº©m'] || '';
+                    const maSAP = match['M\u00E3 SAP'] || match['M\u00E3 Sap'] || match['MÃ£ SAP'] || match['MÃ£ Sap'] || '';
+                    const tenSP = match['T\u00EAn s\u1EA3n ph\u1EA9m'] || match['T\u00EAn S\u1EA3n Ph\u1EA9m'] || match['TÃªn sáº£n pháº©m'] || match['TÃªn Sáº£n Pháº©m'] || '';
 
-                    const highlightedName = highlightKeyword(tenSP, rawVal);
                     const highlightedCode = highlightKeyword(maSP, rawVal);
+                    const highlightedName = highlightKeyword(tenSP, rawVal);
 
                     return `
                         <div class="suggestion-item p-3 hover:bg-blue-50 dark:hover:bg-slate-700/60 cursor-pointer transition flex items-center justify-between gap-3 text-xs sm:text-sm" data-code="${maSP}">
-                            <div>
+                            <div class="overflow-hidden">
                                 <span class="font-mono font-bold text-ttk-blue dark:text-sky-400">${highlightedCode}</span>
-                                ${maSAP ? `<span class="text-[11px] text-slate-400 ml-1.5 font-mono">(${maSAP})</span>` : ''}
+                                ${maSAP ? `<span class="text-[11px] text-slate-400 ml-1.5 font-mono">(${maSAP})</span>` : ""}
                                 <span class="text-slate-700 dark:text-slate-200 ml-2 font-medium">${highlightedName}</span>
                             </div>
-                            <i class="fa-solid fa-arrow-turn-down -rotate-90 text-slate-300 dark:text-slate-600 text-xs"></i>
+                            <i class="fa-solid fa-arrow-turn-down -rotate-90 text-slate-300 dark:text-slate-600 text-xs flex-shrink-0"></i>
                         </div>
                     `;
                 }).join('');
-
                 suggestionsBox.classList.remove('hidden');
 
                 // Attach click handlers to suggestions
@@ -1456,6 +1473,7 @@
                         const code = item.getAttribute('data-code');
                         searchInput.value = code;
                         suggestionsBox.classList.add('hidden');
+                        if (clearSearchBtn) clearSearchBtn.classList.remove('hidden');
                         searchProduct();
                     });
                 });
