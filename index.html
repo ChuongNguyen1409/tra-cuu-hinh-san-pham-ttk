@@ -1096,14 +1096,19 @@
         // ==========================================================================
         function getSearchScore(item, rawQuery) {
             if (!rawQuery) return 1;
-            const query = rawQuery.trim();
-            const queryNorm = normalizeStr(query);
+            const queryRaw = rawQuery.trim();
+            const queryNorm = normalizeStr(queryRaw);
             if (!queryNorm) return 1;
 
-            const tenRaw = (item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '').trim();
-            const maRaw = (item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '').trim();
-            const sapRaw = (item['Mã SAP'] || item['Mã Sap'] || '').trim();
-            const qcRaw = (item['Quy cách'] || item['Quy Cách'] || '').trim();
+            // Tach thong minh khi nguoi dung go dinh lien chu va so: "phi5" -> "phi 5", "to400" -> "to 400"
+            const queryExpanded = queryNorm
+                .replace(/(phi|f|to|ly|hop|khay|dia|muong|dua)(\d+)/g, '$1 $2')
+                .replace(/(\d+)(mm|cm|ml|gr|g|kg)/g, '$1 $2');
+
+            const tenRaw = (item['T\u00EAn s\u1EA3n ph\u1EA9m'] || item['T\u00EAn S\u1EA3n Ph\u1EA9m'] || item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '').trim();
+            const maRaw = (item['M\u00E3 S\u1EA3n Ph\u1EA9m'] || item['M\u00E3 s\u1EA3n ph\u1EA9m'] || item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '').trim();
+            const sapRaw = (item['M\u00E3 SAP'] || item['M\u00E3 Sap'] || item['Mã SAP'] || item['Mã Sap'] || '').trim();
+            const qcRaw = (item['Quy c\u00E1ch'] || item['Quy C\u00E1ch'] || item['Quy cách'] || item['Quy Cách'] || '').trim();
 
             const tenNorm = normalizeStr(tenRaw);
             const maNorm = normalizeStr(maRaw);
@@ -1112,105 +1117,129 @@
 
             let score = 0;
 
-            // Tách các từ riêng biệt bằng khoảng trắng và ký tự đặc biệt
             const wordsRaw = tenRaw.toLowerCase().split(/[\s,./\-+()_:]+/).filter(Boolean);
             const wordsNorm = tenNorm.split(/[\s,./\-+()_:]+/).filter(Boolean);
             const maWords = maNorm.split(/[\s,./\-+()_:]+/).filter(Boolean);
             const qcWords = qcNorm.split(/[\s,./\-+()_:]+/).filter(Boolean);
 
-            const isAccented = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(query);
-            const queryLower = query.toLowerCase();
-
-            // 1. Khớp từ chính xác có dấu tiếng Việt (Ưu tiên số 1 - ví dụ người dùng gõ "ống" hoặc "hộp")
-            if (isAccented) {
-                if (wordsRaw.includes(queryLower)) {
-                    score += 1500;
-                    if (wordsRaw[0] === queryLower) score += 500; // Là từ đầu tiên trong tên SP
-                } else if (wordsRaw.some(w => w.startsWith(queryLower))) {
-                    score += 900;
-                    if (wordsRaw[0].startsWith(queryLower)) score += 300;
-                } else if (tenRaw.toLowerCase().includes(queryLower)) {
-                    score += 400;
-                }
+            // 1. Khop cum tu lien ke trong Ten SP (Uu tien so 1: "phi 5", "to 400", "ong nhon 12")
+            if (tenNorm.includes(queryNorm) || tenNorm.includes(queryExpanded)) {
+                score += 3000;
+                if (tenNorm.startsWith(queryNorm) || tenNorm.startsWith(queryExpanded)) score += 1000;
             }
-
-            // 2. Khớp từ đã chuẩn hóa không dấu (Dành cho người gõ "ong" ra "ống")
-            if (wordsNorm.includes(queryNorm)) {
-                score += 800;
-                if (wordsNorm[0] === queryNorm) score += 400; // Từ đầu tiên
-            } else if (wordsNorm.some(w => w.startsWith(queryNorm))) {
-                score += 500;
-                if (wordsNorm[0].startsWith(queryNorm)) score += 200;
-            }
-
-            // 3. Khớp Mã Sản Phẩm (e.g. OH12, TTK-OH)
-            if (maNorm === queryNorm) {
-                score += 1200;
-            } else if (maWords.includes(queryNorm) || maNorm.startsWith(queryNorm)) {
-                score += 850;
-            } else if (maNorm.includes(queryNorm)) {
-                score += 450;
-            }
-
-            // 4. Khớp Mã SAP
-            if (sapNorm === queryNorm) {
+            if (tenRaw.toLowerCase().includes(queryRaw.toLowerCase())) {
                 score += 1000;
-            } else if (sapNorm.startsWith(queryNorm)) {
-                score += 600;
-            } else if (sapNorm.includes(queryNorm)) {
-                score += 300;
             }
 
-            // 5. Khớp Quy cách (specs)
-            if (qcWords.includes(queryNorm)) {
-                score += 250;
-            } else if (qcWords.some(w => w.startsWith(queryNorm))) {
-                score += 150;
+            // 2. Khop truc tiep Ma San Pham hoac Ma SAP
+            if (maNorm === queryNorm) {
+                score += 3500;
+            } else if (maNorm.startsWith(queryNorm)) {
+                score += 1500;
+            } else if (maWords.includes(queryNorm)) {
+                score += 1200;
             }
 
-            // 6. Tìm kiếm cụm từ nhiều từ (e.g. "ong hut nhon", "ly 700", "hop com 4 ngan")
-            const queryTokens = queryNorm.split(/\s+/).filter(Boolean);
+            if (sapNorm === queryNorm) {
+                score += 3500;
+            } else if (queryNorm.length >= 4 && sapNorm.startsWith(queryNorm)) {
+                // Chi cho phep khop tien to SAP khi nguoi dung go tu 4 chu so tro len (tranh so 5 an vao SAP 5000xxxx)
+                score += 1500;
+            }
+
+            // 3. Xu ly tim kiem nhieu tu (Multi-token: "phi 5", "to 400", "ong nhon 12", "phi5")
+            const queryTokens = queryExpanded.split(/\s+/).filter(Boolean);
             if (queryTokens.length > 1) {
-                const allTokensMatch = queryTokens.every(tok => 
-                    wordsNorm.some(w => w.startsWith(tok) || w === tok) || 
-                    maNorm.includes(tok) || 
-                    sapNorm.includes(tok) ||
-                    qcWords.some(w => w.startsWith(tok) || w === tok)
-                );
-                if (allTokensMatch) score += 600;
-            }
+                let matchedAll = true;
+                let tokenScore = 0;
 
-            // QUY TẮC CỐT LÕI:
-            // Nếu từ khóa tìm kiếm ngắn (<= 3 ký tự, ví dụ: "ong", "ly", "hop"),
-            // TUYỆT ĐỐI KHÔNG nhận các từ con nằm bên trong từ khác như "t-ong" (tổng), "d-ong" (đóng), "ch-ong" (chống)!
-            if (queryNorm.length <= 3) {
-                if (score < 200) return 0; // Loại bỏ hoàn toàn kết quả sai!
-            } else {
-                if (score === 0) {
-                    if (tenNorm.includes(queryNorm) || maNorm.includes(queryNorm)) {
-                        score += 50;
+                for (const tok of queryTokens) {
+                    const isNumber = /^\d+$/.test(tok);
+                    let tokMatched = false;
+
+                    if (isNumber) {
+                        // KHI TOKEN LA SO (vd: "5", "12", "400"):
+                        // Phai khop dung so do trong Ten SP, Quy cach, hoac Ma SP.
+                        // TUYET DOI KHONG dem so ngan kiem tra substring vao Ma SAP (vi ma SAP toan bat dau bang 5)!
+                        if (wordsNorm.includes(tok)) {
+                            tokMatched = true;
+                            tokenScore += 600;
+                        } else if (wordsNorm.some(w => new RegExp(`^(phi|d|f)?${tok}(cm|mm|ml|g|gr|kg)?$`).test(w))) {
+                            tokMatched = true;
+                            tokenScore += 500;
+                        } else if (maWords.includes(tok) || new RegExp(`\\b${tok}\\b`).test(maNorm)) {
+                            tokMatched = true;
+                            tokenScore += 500;
+                        } else if (qcWords.includes(tok)) {
+                            tokMatched = true;
+                            tokenScore += 300;
+                        }
+                    } else {
+                        // KHI TOKEN LA CHU (vd: "phi", "ong", "nhon", "bopp"):
+                        if (wordsNorm.includes(tok)) {
+                            tokMatched = true;
+                            tokenScore += 400;
+                        } else if (wordsNorm.some(w => w.startsWith(tok))) {
+                            tokMatched = true;
+                            tokenScore += 200;
+                        } else if (maNorm.includes(tok)) {
+                            tokMatched = true;
+                            tokenScore += 200;
+                        } else if (qcWords.some(w => w.startsWith(tok) || w === tok)) {
+                            tokMatched = true;
+                            tokenScore += 100;
+                        }
+                    }
+
+                    if (!tokMatched) {
+                        matchedAll = false;
+                        break;
                     }
                 }
+
+                if (matchedAll) {
+                    score += (1000 + tokenScore);
+                }
+            } else {
+                // Tim kiem tu don (vd: "ong", "ly", "hop")
+                if (wordsNorm.includes(queryNorm)) {
+                    score += 1000;
+                    if (wordsNorm[0] === queryNorm) score += 500;
+                } else if (wordsNorm.some(w => w.startsWith(queryNorm))) {
+                    score += 500;
+                    if (wordsNorm[0].startsWith(queryNorm)) score += 200;
+                }
+            }
+
+            // QUY TAC BAO VE TU KHOA NGAN (<= 3 ky tu, vi du: "ong", "ly", "hop"):
+            // Loai bo hoan toan cac tu con nam ben trong tu khac nhu "t-ong" (tong), "d-ong" (dong), "ch-ong" (chong)
+            if (queryNorm.length <= 3) {
+                if (score < 400) return 0;
             }
 
             return score;
         }
+
         // Helper: Highlight tu khoa trong ket qua tim kiem (Single pass regex, an toan tuyet doi)
         function highlightKeyword(text, rawQuery) {
             if (!rawQuery || !text) return text;
             try {
                 const str = String(text);
-                const terms = rawQuery.trim().split(/\s+/).filter(Boolean);
+                const queryNorm = normalizeStr(rawQuery);
+                const expanded = queryNorm
+                    .replace(/(phi|f|to|ly|hop|khay|dia|muong|dua)(\d+)/g, '$1 $2')
+                    .replace(/(\d+)(mm|cm|ml|gr|g|kg)/g, '$1 $2');
+
+                const terms = (rawQuery + ' ' + expanded).trim().split(/\s+/).filter(Boolean);
                 if (terms.length === 0) return str;
 
-                const escapedTerms = terms
+                const escapedTerms = Array.from(new Set(terms))
                     .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
                     .filter(Boolean)
                     .sort((a, b) => b.length - a.length);
 
                 if (escapedTerms.length === 0) return str;
 
-                // Quet 1 lan duy nhat: tuyet doi khong de quy vao the HTML vua tao
                 const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
                 return str.replace(regex, '<mark class="highlight-term">$1</mark>');
             } catch(e) {
@@ -1218,7 +1247,6 @@
             }
         }
 
-        // Search & Render Products Function with Precision Ranking
         function searchProduct(filterKeyword = '') {
 
             const rawKeyword = (filterKeyword || searchInput.value || '').trim();
