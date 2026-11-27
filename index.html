@@ -1247,6 +1247,49 @@
             }
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        window.escapeHtml = escapeHtml;
+
+        window.currentFilteredProducts = [];
+
+        function openImageModalByIndex(index) {
+            const item = window.currentFilteredProducts?.[index];
+            if (!item) return;
+            const maSAP = item['Mã SAP'] || item['Mã Sap'] || 'Đang cập nhật';
+            const maSP = item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || 'Đang cập nhật';
+            const tenSP = item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || 'Sản phẩm Tân Tường Khang';
+            const rawImageUrl = item['Link URL hình ảnh'] || item['Hình ảnh'] || item['Link ảnh'] || item['Hình ảnh sản phẩm'] || '';
+            const imageUrl = getDirectDriveImageUrl(rawImageUrl);
+            openImageModal(imageUrl, maSP, tenSP, maSAP);
+        }
+        window.openImageModalByIndex = openImageModalByIndex;
+
+        function copyProductCodeByIndex(index) {
+            const item = window.currentFilteredProducts?.[index];
+            if (!item) return;
+            const maSP = item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '';
+            copyText(maSP, `Đã copy Mã SP: ${maSP}`, `Đã copy mã ${maSP} nha! ✨`);
+        }
+        window.copyProductCodeByIndex = copyProductCodeByIndex;
+
+        function copyProductInfoByIndex(index) {
+            const item = window.currentFilteredProducts?.[index];
+            if (!item) return;
+            const maSAP = item['Mã SAP'] || item['Mã Sap'] || '-';
+            const maSP = item['Mã Sản Phẩm'] || item['Mã sản phẩm'] || '-';
+            const tenSP = item['Tên sản phẩm'] || item['Tên Sản Phẩm'] || '';
+            copyText(`[${maSP}] ${tenSP} (SAP: ${maSAP})`, `Đã copy đầy đủ thông tin [${maSP}]`, 'Đã copy đầy đủ thông tin gửi khách rồi đó! 🚀');
+        }
+        window.copyProductInfoByIndex = copyProductInfoByIndex;
+
         function searchProduct(filterKeyword = '') {
 
             const rawKeyword = (filterKeyword || searchInput.value || '').trim();
@@ -1263,6 +1306,8 @@
                 scored.sort((a, b) => b.score - a.score);
                 filtered = scored.map(res => res.item);
             }
+
+            window.currentFilteredProducts = filtered;
 
             // Update Counter
             if (resultsCount) {
@@ -1306,15 +1351,15 @@
                                     ${hasImage ? `
                                         <img 
                                             src="${imageUrl}" 
-                                            alt="${tenSP}" 
+                                            alt="${escapeHtml(tenSP)}" 
                                             loading="lazy"
                                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
-                                            onclick="openImageModal('${imageUrl}', '${maSP}', '${tenSP}', '${maSAP}')"
+                                            onclick="openImageModalByIndex(${index})"
                                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'flex flex-col items-center justify-center text-slate-400 p-4 text-center\\'><i class=\\'fa-solid fa-triangle-exclamation text-amber-500 text-2xl mb-1\\'></i><span class=\\'text-xs font-semibold\\'>Link ảnh lỗi / Chưa có quyền truy cập Drive</span></div>';"
                                         >
                                         <button 
                                             class="btn-tactile absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 dark:bg-slate-800/90 hover:bg-ttk-blue hover:text-white text-slate-700 dark:text-slate-200 flex items-center justify-center text-xs shadow-md transition"
-                                            onclick="openImageModal('${imageUrl}', '${maSP}', '${tenSP}', '${maSAP}')"
+                                            onclick="openImageModalByIndex(${index})"
                                             title="Phóng to ảnh HD"
                                         >
                                             <i class="fa-solid fa-expand"></i>
@@ -1360,7 +1405,7 @@
                             <div class="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center gap-2">
                                 <button 
                                     class="btn-tactile flex-1 py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition"
-                                    onclick="copyText('${maSP}', 'Đã copy Mã SP: ${maSP}', 'Đã copy mã ${maSP} nha! ✨')"
+                                    onclick="copyProductCodeByIndex(${index})"
                                     title="Copy riêng mã SP"
                                 >
                                     <i class="fa-regular fa-copy text-ttk-blue dark:text-sky-400"></i>
@@ -1369,7 +1414,7 @@
 
                                 <button 
                                     class="btn-tactile flex-1 py-2 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-sky-950/80 dark:hover:bg-sky-900 text-ttk-blue dark:text-sky-300 font-bold text-xs flex items-center justify-center gap-1.5 transition"
-                                    onclick="copyText('[${maSP}] ${tenSP} (SAP: ${maSAP})', 'Đã copy đầy đủ thông tin [${maSP}]', 'Đã copy đầy đủ thông tin gửi khách rồi đó! 🚀')"
+                                    onclick="copyProductInfoByIndex(${index})"
                                     title="Copy định dạng chuẩn gửi khách Zalo/Viber"
                                 >
                                     <i class="fa-solid fa-clipboard-check"></i>
@@ -1400,9 +1445,9 @@
                                     ${hasImage ? `
                                         <img 
                                             src="${imageUrl}" 
-                                            alt="${tenSP}" 
+                                            alt="${escapeHtml(tenSP)}" 
                                             class="w-full h-full object-cover cursor-pointer"
-                                            onclick="openImageModal('${imageUrl}', '${maSP}', '${tenSP}', '${maSAP}')"
+                                            onclick="openImageModalByIndex(${index})"
                                             onerror="this.src='https://placehold.co/100x100?text=No+Img';"
                                         >
                                     ` : `
@@ -1425,7 +1470,7 @@
                                 <div class="flex items-center justify-end gap-1.5">
                                     <button 
                                         class="btn-tactile p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-ttk-blue hover:text-white text-slate-700 dark:text-slate-200 transition"
-                                        onclick="copyText('[${maSP}] ${tenSP} (SAP: ${maSAP})', 'Đã copy thông tin [${maSP}]')"
+                                        onclick="copyProductInfoByIndex(${index})"
                                         title="Copy thông tin"
                                     >
                                         <i class="fa-regular fa-copy"></i>
@@ -1433,7 +1478,7 @@
                                     ${hasImage ? `
                                         <button 
                                             class="btn-tactile p-2 rounded-lg bg-blue-50 dark:bg-sky-950 hover:bg-ttk-blue hover:text-white text-ttk-blue dark:text-sky-400 transition"
-                                            onclick="openImageModal('${imageUrl}', '${maSP}', '${tenSP}', '${maSAP}')"
+                                            onclick="openImageModalByIndex(${index})"
                                             title="Xem ảnh lớn"
                                         >
                                             <i class="fa-solid fa-expand"></i>
